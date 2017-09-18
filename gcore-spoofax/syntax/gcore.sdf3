@@ -1,0 +1,51 @@
+module gcore
+
+imports
+  
+ 	Layout
+	Names
+	Literals
+	ConstructPattern
+	PathMacro
+ 	MatchPattern
+ 	SolutionModifiers
+	Expressions
+
+context-free start-symbols
+  
+	Start
+
+context-free syntax
+  
+	Start = FullQuery
+	
+	FullQuery.Simple = BasicQuery
+	FullQuery.WithSetOperation = <
+		<BasicQuery>
+		<SetOperation>
+		<FullQuery>
+	>
+	
+	SetOperation.Union = <UNION> {case-insensitive}
+	SetOperation.UnionAll = <UNION ALL> {case-insensitive}
+	SetOperation.Minus = <MINUS> {case-insensitive}
+	SetOperation.Intersect = <INTERSECT> {case-insensitive}
+	
+	BasicQuery.BasicQuery = <
+		<ProjectClause> 
+		<PathClause?>
+		<MatchClause> 
+		<WhereClause?>
+		<OrderByClause?>
+		<LimitOffsetClauses?>
+	>
+
+	ProjectClause.Construct = <CONSTRUCT <ConstructPattern>> {case-insensitive}
+	ProjectClause.PathProject = <PATH PROJECT <{IDENTIFIER ", "}+>> {case-insensitive}
+	ProjectClause.Select = <SELECT <{ExpAsVar ", "}+>> {case-insensitive}
+	PathClause.Path = <<{PathMacroDeclaration " \n"}+>>
+	MatchClause.Match = <MATCH <MatchPattern><GraphDeclaration?>> {case-insensitive}
+	WhereClause.Where = <WHERE <Exp>> {case-insensitive}
+	
+	GraphDeclaration.GraphDeclaration = <ON <GraphName>> {case-insensitive}
+	

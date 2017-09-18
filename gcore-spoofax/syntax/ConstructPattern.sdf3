@@ -1,0 +1,48 @@
+module ConstructPattern
+
+imports
+  
+  Literals
+  Names
+  Expressions
+
+context-free syntax
+
+  ConstructPattern.ConstructPattern = <<{BasicConstructPattern ",\n"}+>
+          <{SetClause " \n"}*>
+          <{RemoveClause " \n"}*>>
+
+	SetClause.SetClause = <SET <PropRef>=<Exp>> {case-insensitive}
+	RemoveClause.Property = <REMOVE <PropRef>> {case-insensitive}
+	RemoveClause.Labels = <REMOVE <VarRef><LabelAssignments>> {case-insensitive}
+
+  BasicConstructPattern.BasicConstructPattern = <<VertexConstructPattern><{EdgeVertexConstructPattern ""}*><ConstructCondition?>>
+  ConstructCondition.ConstructCondition = < WHEN <Exp>> {case-insensitive}
+  
+  VertexConstructPattern.Vertex = <(<VarRefDef?><CopyPattern?><GroupDeclaration?><ObjectConstructPattern>)>
+  
+  EdgeVertexConstructPattern.EdgeVertexConstructPattern = <<ConnectionConstructPattern><VertexConstructPattern>>
+  ConnectionConstructPattern.OutConn = [-[EdgeOrPathContentConstructPattern?]->]
+  ConnectionConstructPattern.InConn = [<-[EdgeOrPathContentConstructPattern?]-]
+  ConnectionConstructPattern.InOutEdge = [<-[EdgeContentConstructPattern?]->]
+  ConnectionConstructPattern.OutEdge = [->]
+	ConnectionConstructPattern.InEdge = [<-]
+	ConnectionConstructPattern.InOutEdge = [<->]
+  
+  EdgeContentConstructPattern.Edge = <[<VarRefDef?><CopyPattern?><GroupDeclaration?><ObjectConstructPattern>]>
+  EdgeOrPathContentConstructPattern.Edge = EdgeContentConstructPattern
+  EdgeOrPathContentConstructPattern.PathVirtual 		= </<VarRef>/>
+  EdgeOrPathContentConstructPattern.PathObjectified	= </<AT-SIGN><VarRefDef?><CopyPattern?><ObjectConstructPattern?>/>
+  
+  
+  ObjectConstructPattern.ObjectConstructPattern = <<LabelAssignments?><PropertyAssignments?>>
+  
+  CopyPattern.CopyPattern = <=<VarRef>>
+  
+  GroupDeclaration.GroupDeclaration = < GROUP <{Exp ", "}+> > {case-insensitive}
+  
+  LabelAssignments.Labels = <<{LabelAssignment ""}+>>
+  LabelAssignment.Label = <:<Label>>
+
+  PropertyAssignments.Props = < <CURLY-OPEN><{PropertyAssignment ", "}*><CURLY-CLOSE>>
+  PropertyAssignment.Prop = <<Prop> = <Exp>>

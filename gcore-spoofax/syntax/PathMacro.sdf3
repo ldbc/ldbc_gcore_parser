@@ -1,0 +1,21 @@
+module PathMacro
+
+imports
+  
+	Literals
+	Names
+	Expressions
+	MatchPattern
+  
+context-free syntax
+	PathMacroDeclaration.PathMacroDeclaration = <PATH <MarcoNameDef> = <BasicMatchPattern><BranchPattern?>
+	  <PathWhereClause?>
+	  <PathCostClause?>> {case-insensitive}
+	  
+	BranchPattern.BranchPattern = <, <{BasicMatchPattern ", "}+>>
+	  
+	PathWhereClause.PathWhereClause = <WHERE <Exp>> {case-insensitive}
+	
+	PathCostClause.PathCostClause = <COST <Exp>> {case-insensitive}
+	
+// TODO extend

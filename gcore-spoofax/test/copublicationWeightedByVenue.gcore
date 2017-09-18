@@ -1,0 +1,12 @@
+CONSTRUCT (a)<-[:coauthor{weight = cost(copath)}]->(b)
+PATH coauthor = ()<-[:AUTHOR]-(paper)-[:AUTHOR]->(),
+     (paper)-[p:PUBLISHED_IN]->(venue)
+     WHERE venue.name IN [ 'VLDB', 'SIGMOD', 'ICDE' ]
+     COST min( case venue.type
+               when 'conference' then 2
+               when 'journal' then 1
+               else infinity
+               end * case p.type
+               when 'proceedings' then 4 else 1 end )
+MATCH (a{name=='Claudio Gutierrez'}), (b{name=='Kevin Bacon'}),
+      (a)-/SHORTEST copath:~coauthor*/-(b)

@@ -1,0 +1,4 @@
+*.analyzed.aterm
+*.aterm
+*.pp.aterm
+*.pp.gcore

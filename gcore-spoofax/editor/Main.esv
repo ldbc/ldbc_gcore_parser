@@ -1,0 +1,13 @@
+module Main
+
+imports
+
+  Syntax
+  Analysis
+
+language
+
+  extensions : gcore
+
+  provider : target/metaborg/stratego.ctree
+  provider : target/metaborg/stratego-javastrat.jar

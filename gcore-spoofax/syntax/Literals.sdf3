@@ -1,0 +1,40 @@
+module Literals
+
+imports
+
+  Names
+
+context-free syntax
+
+  Literal   = Number
+  Literal   = Boolean
+  Literal   = String
+  Literal   = Parameter
+  Literal   = Date
+  Literal   = Time
+  Literal   = Timestamp
+
+context-free syntax
+
+  Number.Integer            = UNSIGNED-INT
+  Number.Decimal            = UNSIGNED-DECIMAL
+  String.String             = STRING 
+  Label.String              = IDENTIFIER
+  Boolean.True              = <TRUE> {case-insensitive}
+  Boolean.False             = <FALSE> {case-insensitive}
+  Parameter.Parameter 			= <?<UNSIGNED-INT?>>
+  Date.Date                 = <DATE <STRING>> {case-insensitive}
+  Time.Time                 = <TIME <STRING>> {case-insensitive}
+  Timestamp.Timestamp       = <TIMESTAMP <STRING>> {case-insensitive}
+
+lexical syntax
+
+  UNSIGNED-INT         = [0-9]+
+  UNSIGNED-DECIMAL     = [0-9]* "." [0-9]+
+
+  STRING               = "'" (~[\'\n\\] | ESCAPE-CHAR)* "'"
+
+lexical restrictions // greedy matching
+
+  UNSIGNED-INT     -/- [0-9]
+  UNSIGNED-DECIMAL -/- [0-9]

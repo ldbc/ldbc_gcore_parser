@@ -1,0 +1,50 @@
+module MatchPattern
+
+imports
+  
+  Literals
+  Names
+  Expressions
+
+context-free syntax
+	
+	MatchPattern.MatchPattern =
+		<<FullMatchPattern> 
+		  <OptionalMatchPattern*>>
+	
+	OptionalMatchPattern.OptionalMatchPattern =	<OPTIONAL 
+<FullMatchPattern>> {case-insensitive}
+
+  FullMatchPattern.FullMatchPattern = <<{BasicMatchPattern ", \n"}+>>
+
+  BasicMatchPattern.BasicMatchPattern = <<VertexMatchPattern><{EdgeVertexMatchPattern ""}*>>
+  VertexMatchPattern.Vertex = <(<VarDef?><ObjectMatchPattern>)>
+
+  EdgeVertexMatchPattern.EdgeVertexMatchPattern = <<ConnectionMatchPattern><VertexMatchPattern>>
+  ConnectionMatchPattern.OutConn = [-[EdgeOrPathMatchPattern?]->]
+  ConnectionMatchPattern.InConn = [<-[EdgeOrPathMatchPattern?]-]
+  ConnectionMatchPattern.InOutEdge = [<-[EdgeMatchPattern?]->]
+  ConnectionMatchPattern.UndirectedEdge = [-[EdgeOrPathMatchPattern?]-]
+  ConnectionMatchPattern.OutEdge = [->]
+  ConnectionMatchPattern.InEdge = [<-]
+  ConnectionMatchPattern.InOutEdge = [<->]
+  ConnectionMatchPattern.UndirectedEdge = [-]
+  
+  EdgeOrPathMatchPattern.Edge = EdgeMatchPattern
+  EdgeOrPathMatchPattern.Path = PathMatchPattern
+  
+  EdgeMatchPattern.EdgeMatchPattern = <[<VarDef?><ObjectMatchPattern>]>
+  
+  PathMatchPattern.Virtual 			= </<PathQuantifier?><VarDef?><PathMarcoReference?><ObjectMatchPattern>/>
+  PathMatchPattern.Objectified	= </<PathQuantifier?><AT-SIGN><VarDef?><PathMarcoReference?><ObjectMatchPattern>/>
+  PathQuantifier.Shortest = <SHORTEST > {case-insensitive}
+  PathQuantifier.XShortest = <<UNSIGNED-INT> SHORTEST > {case-insensitive}
+  PathQuantifier.XDistinctShortest = <<UNSIGNED-INT> DISJUNCT SHORTEST > {case-insensitive}
+  PathQuantifier.AllPaths = <ALL PATHS > {case-insensitive}
+  PathMarcoReference.Simple = <:~<MarcoNameRef>>
+  PathMarcoReference.Kleene = <:~<MarcoNameRef>*>
+
+  ObjectMatchPattern.ObjectMatchPattern = <<LabelPredicates?><PropertyPredicates?>>
+
+  PropertyPredicates.Props = < <CURLY-OPEN><{PropertyPredicate ", "}*><CURLY-CLOSE>>
+  PropertyPredicate.Prop = <<Prop> == <Literal>>
