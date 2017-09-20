@@ -1,0 +1,24 @@
+module ldbc-snb-interactive
+
+language gcore
+
+
+test Query 1 [[
+
+SELECT friend.id, friend.lastName, length(p) AS distance, friend.birthday, friend.creationDate, friend.gender,
+       friend.browserUsed, friend.locationIP, friend.email, friend.speaks, friendCity.name,
+       ( SELECT GROUP_CONCAT(uni.name + ' ' + studyAt.year + ' ' + uniCity.name)
+         MATCH (friend) -[studyAt:study_at]-> (uni:University) -[:is_located_in]-> (uniCity:City) ON snbGraph100
+         /* how to GROUP BY friend while returning a single scalar from the SELECT? */
+       ) AS unis,
+       ( SELECT GROUP_CONCAT(company.name + ' ' + worksAt.workFrom + ' ' + companyCountry.name)
+         MATCH (friend) -[worksAt:works_at]-> (company:Company) -[:is_located_in]-> (companyCountry:Country) ON snbGraph100
+         /* how to GROUP BY friend while returning a single scalar from the SELECT? */
+       ) AS work
+MATCH (person:Person) -/p:knows/* TODO: one to three hops */ /-> (friend:Person) -[:is_located_in]-> (friendCity:City) ON snbGraph100
+WHERE person.id == 123
+  AND friend.firstName == 'John'
+ORDER BY distance ASC, friend.lastName ASC, friend.id ASC
+LIMIT 20
+
+]]

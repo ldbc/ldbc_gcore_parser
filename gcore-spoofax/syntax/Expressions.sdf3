@@ -4,6 +4,7 @@ imports
 
   Names
   Literals
+  gcore
 
 context-free syntax
 
@@ -48,8 +49,10 @@ context-free syntax
 
   Exp.Cast = <CAST(<Exp> AS <DATA-TYPE>)> {case-insensitive}
 
-  //Exp.Exists = <exists( <Query> )> {case-insensitive}
-  
+  Subquery.Subquery = <( <FullQuery> )>
+  Exp.Exists = <exists<Subquery>> {case-insensitive}
+  Exp.ScalarSubquery = Subquery
+
   LabelPredicateExp.LabelPredicateExp = <<VarRef><LabelPredicates>>
   LabelPredicates.LabelPredicates = <<{LabelPredicate ""}+>>
   LabelPredicate.LabelPredicate = <:<Label>>
@@ -67,6 +70,7 @@ context-free syntax // Aggregates
   Exp.max          = <MAX(<Distinct?><Exp>)> {case-insensitive}
   Exp.sum          = <SUM(<Distinct?><Exp>)> {case-insensitive}
   Exp.avg          = <AVG(<Distinct?><Exp>)> {case-insensitive}
+  Exp.group-concat = <GROUP_CONCAT(<Distinct?><Exp>)> {case-insensitive} // concatenation of group of strings using comma (,) as separator
 
   StarOrExp.Star = <*>
   StarOrExp = <<Exp>>
