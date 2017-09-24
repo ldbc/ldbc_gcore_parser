@@ -1,4 +1,4 @@
-package org.ldbcouncil.gcore.strategies;
+package gcore_spoofax.strategies;
 
 import org.strategoxt.lang.Context;
 

@@ -38,19 +38,19 @@ context-free syntax
 
   Exp.And = <<Exp> AND <Exp>> {left, case-insensitive}
   Exp.Or = <<Exp> OR <Exp>> {left, case-insensitive}
-  
-  Exp.Case = <
-  CASE <Exp>
-  <WhenThenCase+>
-  <ElseCase?>
-  END> {case-insensitive}
-	WhenThenCase.WhenThenCase = <WHEN <Exp> THEN <Exp>> {case-insensitive}
-	ElseCase.ElseCase = <ELSE <Exp>> {case-insensitive}
+
+  Exp.IsNull = <<Exp> IS NULL> {case-insensitive}
+  Exp.IsNotNull = <<Exp> IS NOT NULL> {case-insensitive}
+
+  Exp.SimpleCase = <CASE <Exp> <WhenThenCase+> <ElseCase?> END> {case-insensitive}
+  Exp.SearchedCase = <CASE <WhenThenCase+> <ElseCase?> END> {case-insensitive}
+  WhenThenCase.WhenThenCase = <WHEN <Exp> THEN <Exp>> {case-insensitive}
+  ElseCase.ElseCase = <ELSE <Exp>> {case-insensitive}
 
   Exp.Cast = <CAST(<Exp> AS <DATA-TYPE>)> {case-insensitive}
 
   Subquery.Subquery = <( <FullQuery> )>
-  Exp.Exists = <exists<Subquery>> {case-insensitive}
+  Exp.Exists = <EXISTS<Subquery>> {case-insensitive}
   Exp.ScalarSubquery = Subquery
 
   LabelPredicateExp.LabelPredicateExp = <<VarRef><LabelPredicates>>
