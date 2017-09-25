@@ -8,11 +8,11 @@ imports
 
 context-free syntax
 	
-	MatchPattern.MatchPattern =
+  MatchPattern.MatchPattern =
 		<<FullMatchPattern> 
 		  <OptionalMatchPattern*>>
 	
-	OptionalMatchPattern.OptionalMatchPattern =	<OPTIONAL 
+  OptionalMatchPattern.OptionalMatchPattern =	<OPTIONAL 
 <FullMatchPattern>> {case-insensitive}
 
   FullMatchPattern.FullMatchPattern = <<{BasicMatchPattern ", \n"}+>>
