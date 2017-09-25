@@ -54,7 +54,7 @@ context-free syntax
   ObjectMatchPattern.ObjectMatchPattern = <<LabelPredicates?><PropertyPredicates?>>
 
   PropertyPredicates.Props = < <CURLY-OPEN><{PropertyPredicate ", "}*><CURLY-CLOSE>>
-  PropertyPredicate.Prop = <<Prop> == <Literal>>
+  PropertyPredicate.Prop = <<Prop> = <Literal>>
 
 context-free priorities
   {

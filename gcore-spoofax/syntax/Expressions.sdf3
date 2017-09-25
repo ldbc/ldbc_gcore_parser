@@ -26,7 +26,7 @@ context-free syntax
   Exp.Div = <<Exp> / <Exp>> {left}
   Exp.Mod = <<Exp> % <Exp>> {left}
   Exp.Sub = <<Exp> - <Exp>> {left}
-  Exp.Eq = <<Exp> == <Exp>> {left}
+  Exp.Eq = <<Exp> = <Exp>> {left}
   Exp.Gt = [[Exp] > [Exp]] {left}
   Exp.Lt = [[Exp] < [Exp]] {left}
   Exp.Gte = [[Exp] >= [Exp]] {left}
