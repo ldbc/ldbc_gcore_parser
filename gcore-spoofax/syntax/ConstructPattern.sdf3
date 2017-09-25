@@ -12,7 +12,7 @@ context-free syntax
           <{SetClause " \n"}*>
           <{RemoveClause " \n"}*>>
 
-	SetClause.SetClause = <SET <PropRef>=<Exp>> {case-insensitive}
+	SetClause.SetClause = <SET <PropRef>:=<Exp>> {case-insensitive}
 	RemoveClause.Property = <REMOVE <PropRef>> {case-insensitive}
 	RemoveClause.Labels = <REMOVE <VarRef><LabelAssignments>> {case-insensitive}
 
@@ -45,4 +45,4 @@ context-free syntax
   LabelAssignment.Label = <:<Label>>
 
   PropertyAssignments.Props = < <CURLY-OPEN><{PropertyAssignment ", "}*><CURLY-CLOSE>>
-  PropertyAssignment.Prop = <<Prop> = <Exp>>
+  PropertyAssignment.Prop = <<Prop> := <Exp>>
