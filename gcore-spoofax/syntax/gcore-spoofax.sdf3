@@ -1,4 +1,4 @@
-module gcore
+module gcore-spoofax
 
 imports
   

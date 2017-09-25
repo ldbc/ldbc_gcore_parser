@@ -35,16 +35,37 @@ context-free syntax
   
   EdgeMatchPattern.EdgeMatchPattern = <[<VarDef?><ObjectMatchPattern>]>
   
-  PathMatchPattern.Virtual 			= </<PathQuantifier?><VarDef?><PathMarcoReference?><ObjectMatchPattern>/>
-  PathMatchPattern.Objectified	= </<PathQuantifier?><AT-SIGN><VarDef?><PathMarcoReference?><ObjectMatchPattern>/>
+  PathMatchPattern.Virtual 		= </<PathQuantifier?><VarDef?><PathExpression?>/>
+  PathMatchPattern.Objectified	= </<PathQuantifier?><AT-SIGN><VarDef?><PathExpression?><ObjectMatchPattern>/>
+  
   PathQuantifier.Shortest = <SHORTEST > {case-insensitive}
   PathQuantifier.XShortest = <<UNSIGNED-INT> SHORTEST > {case-insensitive}
   PathQuantifier.XDistinctShortest = <<UNSIGNED-INT> DISJUNCT SHORTEST > {case-insensitive}
   PathQuantifier.AllPaths = <ALL PATHS > {case-insensitive}
-  PathMarcoReference.Simple = <:~<MarcoNameRef>>
-  PathMarcoReference.Kleene = <:~<MarcoNameRef>*>
+  
+  PathExpression.PathExpression = <<LT><RegularPathExpression><GT>>
+  RegularPathExpression = <(<RegularPathExpression>)> {bracket}
+  RegularPathExpression = LabelPredicate
+  RegularPathExpression = MarcoNameRef
+  RegularPathExpression.KleeneStar = <<RegularPathExpression>*> {left}
+  RegularPathExpression.Concatenation = <<RegularPathExpression> <RegularPathExpression>> {left}
+  RegularPathExpression.Union = <<RegularPathExpression>+<RegularPathExpression>> {left}
 
   ObjectMatchPattern.ObjectMatchPattern = <<LabelPredicates?><PropertyPredicates?>>
 
   PropertyPredicates.Props = < <CURLY-OPEN><{PropertyPredicate ", "}*><CURLY-CLOSE>>
   PropertyPredicate.Prop = <<Prop> == <Literal>>
+
+context-free priorities
+  {
+    left:
+      RegularPathExpression.KleeneStar
+  }
+  >
+  {
+    left:
+      RegularPathExpression.Concatenation
+      RegularPathExpression.Union
+  }
+  
+  

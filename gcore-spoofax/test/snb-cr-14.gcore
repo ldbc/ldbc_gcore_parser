@@ -12,5 +12,5 @@ CONSTRUCT (p1)-/@p { weight = SUM(x) }/->(p2)
 PATH knows = (p1)-[e:knows]-(p2)
 MATCH (p1:Person{id==1}),
       (p2:Person{id==5}),
-      (p1)-/SHORTEST p:~knows*/-(p2)
+      (p1)-/SHORTEST p <~knows*>/-(p2)
 // weight calculation is missing, probably needs optional matches and aggregations

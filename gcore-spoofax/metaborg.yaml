@@ -18,7 +18,7 @@ debug:
   typesmart: false
 language:
   sdf:
-    pretty-print: gcore
+    pretty-print: gcore-spoofax
     # If set to java, set the table in editor/Syntax.esv to target/metaborg/sdf-new.tbl
     sdf2table: c
     placeholder:

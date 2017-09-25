@@ -3,7 +3,7 @@ module Syntax
 imports 
 
   libspoofax/color/default
-  completion/colorer/gcore-cc-esv
+  completion/colorer/gcore-spoofax-cc-esv
 
 language
 
@@ -12,7 +12,7 @@ language
 
   line comment  : "//"
   block comment : "/*" * "*/"
-  fences        : [ ] ( ) { } -/ /-
+  fences        : [ ] ( ) { }
 
 menus
   

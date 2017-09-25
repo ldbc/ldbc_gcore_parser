@@ -5,8 +5,8 @@ imports
   libstratego-gpp
   libspoofax/sdf/pp
   libspoofax/editor/refactoring/-
-  pp/gcore-parenthesize
-  pp/gcore-pp
+  pp/gcore-spoofax-parenthesize
+  pp/gcore-spoofax-pp
 
 rules
 
@@ -19,31 +19,31 @@ rules
 
 rules
   
-  pp-gcore-string =
-    parenthesize-gcore
-    ; prettyprint-gcore-start-symbols
+  pp-gcore-spoofax-string =
+    parenthesize-gcore-spoofax
+    ; prettyprint-gcore-spoofax-start-symbols
     ; !V([], <id>)
     ; box2text-string(|120)
       
-  pp-partial-gcore-string =
-    parenthesize-gcore
-    ; prettyprint-gcore
+  pp-partial-gcore-spoofax-string =
+    parenthesize-gcore-spoofax
+    ; prettyprint-gcore-spoofax
     ; !V([], <id>)
     ; box2text-string(|120)
     
-  pp-partial-gcore-string(|sort) =
-    parenthesize-gcore
-    ; prettyprint-gcore(|sort)
+  pp-partial-gcore-spoofax-string(|sort) =
+    parenthesize-gcore-spoofax
+    ; prettyprint-gcore-spoofax(|sort)
     ; !V([], <id>)
     ; box2text-string(|120)  
       
   pp-debug :
     ast -> result
     with
-       result := <pp-gcore-string> ast
-    <+ <bottomup(try(not(is-string); not(is-list); not(pp-gcore-string); debug(!"cannot pp ")))> ast
+       result := <pp-gcore-spoofax-string> ast
+    <+ <bottomup(try(not(is-string); not(is-list); not(pp-gcore-spoofax-string); debug(!"cannot pp ")))> ast
     ;  result := ""
 
 rules
   
-  construct-textual-change = construct-textual-change(pp-partial-gcore-string, parenthesize, override-reconstruction, resugar)
+  construct-textual-change = construct-textual-change(pp-partial-gcore-spoofax-string, parenthesize, override-reconstruction, resugar)

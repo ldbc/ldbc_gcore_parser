@@ -7,5 +7,5 @@ path produceBy = ()-()
 path locatedIn = ()-()
 match (x:Person {name == 'Peter'})-[:like]->(t:TVShow:Comedy), (t)<-[:like]-(y:Person {name == ?}),
 	(x)-/@r:PersonalRelation {quality == 3}/->()
-	optional (t)-/shortest @:~produceBy* {length == 3}/->(s:Station)-/:~locatedIn*/->( )<-/:~locatedIn*/-()<-[:lifesIn]-(x)
+	optional (t)-/shortest @ <~produceBy*> :StationPath {length == 3}/->(s:Station)-/<~locatedIn*>/->( )<-/<(:inCity:inState:capital)+~locatedIn*>/-()<-[:lifesIn]-(x)
 where x.name != y.name and s.year >= 2000 and not (s.name == 'RTL' aND rating2Bad(t.rating^3)) and ('Friends' in labels(r) Or r:Coworkers)

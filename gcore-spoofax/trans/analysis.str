@@ -26,7 +26,7 @@ rules // Editor services
   editor-hover:
     (node, _, _, _, project-path) -> label
     where
-      label := <get-editor-properties(pp-partial-gcore-string|<language>, project-path); properties-to-html> node
+      label := <get-editor-properties(pp-partial-gcore-spoofax-string|<language>, project-path); properties-to-html> node
 
 rules // Debugging
   

@@ -8,20 +8,13 @@
   <groupId>org.ldbcouncil</groupId>
   <artifactId>gcore-spoofax</artifactId>
   <version>0.1.0-SNAPSHOT</version>
-  <!-- packaging>spoofax-language</packaging -->
+  <packaging>spoofax-language</packaging>
 
-  <!-- parent>
+  <parent>
     <groupId>org.metaborg</groupId>
     <artifactId>parent.language</artifactId>
     <version>2.2.1</version>
-  </parent -->
-  <dependencies>
-    <dependency>
-      <groupId>org.metaborg</groupId>
-      <artifactId>org.metaborg.spoofax.core.uber</artifactId>
-      <version>2.1.0</version>
-    </dependency>
-  </dependencies>
+  </parent>
   
   <repositories>
     <repository>

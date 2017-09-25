@@ -18,7 +18,7 @@ context-free syntax
   Identifier = DOUBLE-QUOTED-STRING
 
   MarcoNameDef.MarcoNameDef = IDENTIFIER //declares as new macro name 
-  MarcoNameRef.MarcoNameRef = IDENTIFIER //uses an already declaraed macro name
+  MarcoNameRef.MarcoNameRef = <~<IDENTIFIER>> //uses an already declaraed macro name
 
 	GraphName = IDENTIFIER
 	
@@ -54,4 +54,6 @@ lexical syntax // reserved keywords
 lexical syntax
   CURLY-OPEN = "{"
   CURLY-CLOSE = "}"
+  LT = "<"
+  GT = ">"
   AT-SIGN = "@"

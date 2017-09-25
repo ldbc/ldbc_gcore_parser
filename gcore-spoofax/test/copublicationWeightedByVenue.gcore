@@ -9,4 +9,4 @@ PATH coauthor = ()<-[:AUTHOR]-(paper)-[:AUTHOR]->(),
                end * case p.type
                when 'proceedings' then 4 else 1 end )
 MATCH (a{name=='Claudio Gutierrez'}), (b{name=='Kevin Bacon'}),
-      (a)-/SHORTEST copath:~coauthor*/-(b)
+      (a)-/SHORTEST copath <~coauthor*>/-(b)

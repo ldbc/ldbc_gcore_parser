@@ -2,7 +2,7 @@ module outline
 
 imports
   
-  signatures/gcore-sig
+  signatures/gcore-spoofax-sig
   libspoofax/editor/outline
 
 rules
