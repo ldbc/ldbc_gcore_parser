@@ -1,5 +1,5 @@
 ---
-id: org.example:blab.test:0.1.0-SNAPSHOT
+id: org.ldbcouncil:gcore-spoofax-tests:0.1.0-SNAPSHOT
 name: gcore-spoofax-tests
 dependencies:
   compile:

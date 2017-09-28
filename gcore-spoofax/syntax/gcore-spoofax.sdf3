@@ -47,5 +47,5 @@ context-free syntax
 	MatchClause.Match = <MATCH <MatchPattern><GraphDeclaration?>> {case-insensitive}
 	WhereClause.Where = <WHERE <Exp>> {case-insensitive}
 	
-	GraphDeclaration.GraphDeclaration = <ON <GraphName>> {case-insensitive}
+	GraphDeclaration.GraphDeclaration = < ON <GraphName>> {case-insensitive}
 	

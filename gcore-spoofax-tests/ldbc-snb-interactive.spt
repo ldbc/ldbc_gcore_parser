@@ -23,10 +23,10 @@ SELECT friend.id, friend.lastName, length(p) AS distance, friend.birthday, frien
      , ( SELECT GROUP_CONCAT(company.name + ' ' + worksAt.workFrom + ' ' + companyCountry.name)
          MATCH (friend) -[worksAt:works_at]-> (company:Company) -[:is_located_in]-> (companyCountry:Country)
        ) AS work
-MATCH (person:Person) -/p:knows/* TODO: one to three hops */ /-> (friend:Person) -[:is_located_in]-> (friendCity:City)
-WHERE person.id == 123
+MATCH (person:Person) -/p <:knows*{1..3}> /-> (friend:Person) -[:is_located_in]-> (friendCity:City)
+WHERE person.id = 123
   AND person <> friend
-  AND friend.firstName == 'John'
+  AND friend.firstName = 'John'
 ORDER BY distance ASC, friend.lastName ASC, friend.id ASC
 LIMIT 20
 
@@ -43,7 +43,7 @@ SELECT friend.id, friend.firstName, friend.lastName
      , message.id, message.creationDate
      , CASE message.content IS NOT NULL WHEN true THEN message.content ELSE message.imageFile END AS messageContent
 MATCH (person:Person) -[:knows]-> (friend:Person) <-[:has_creator]- (message:Post /* TODO: Post|Comment instead of Post */)
-WHERE person.id == 12345
+WHERE person.id = 12345
   AND message.creationDate <= DATE '2010-01-01'
 ORDER BY message.creationDate DESC, message.id ASC
 LIMIT 10
@@ -65,30 +65,30 @@ SELECT friend.id, friend.firstName, friend.lastName,
        ( SELECT COUNT(messageX)
          MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
          WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
-           AND countryX.name == 'India'
+           AND countryX.name = 'India'
        ) AS count1,
        ( SELECT COUNT(messageX)
          MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
          WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
-           AND countryX.name == 'China'
+           AND countryX.name = 'China'
        ) AS count2,
        count1 + count2 AS count
-MATCH (person:Person) -/:knows /* TODO: one to two hops */ /-> (friend:Person)
-WHERE person.id == 12345
+MATCH (person:Person) -/<:knows*{1..2}>/-> (friend:Person)
+WHERE person.id = 12345
   AND person <> friend
   AND NOT EXISTS ( SELECT countryXY
                    MATCH (friend) -[:is_located_in]-> () -[:is_part_of]-> (countryXY)
-                   WHERE countryXY.name == 'India' OR countryXY.name == 'China'
+                   WHERE countryXY.name = 'India' OR countryXY.name = 'China'
                  )
   AND EXISTS ( SELECT countryX
                MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
                WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
-                 AND countryX.name == 'India'
+                 AND countryX.name = 'India'
              )
   AND EXISTS ( SELECT countryY
                MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryY:Country)
                WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
-                 AND countryY.name == 'China'
+                 AND countryY.name = 'China'
              )
 ORDER BY (cnt1 + cnt2) DESC, friend.id ASC
 LIMIT 20
@@ -106,7 +106,7 @@ test Query 4 [[
 
 SELECT tag.name, COUNT(post)
 MATCH (person:Person) -[:knows]-> (friend:Person) <-[:has_creator]- (post:Post) -[:has_tag]-> (tag:Tag)
-WHERE person.id == 12345
+WHERE person.id = 12345
   AND between(post.creationDate, DATE '2012-01-01', DATE '2012-02-01')
   AND NOT EXISTS( SELECT oldPost
                   MATCH (tag) <-[:has_tag]- (oldPost:Post)
@@ -130,10 +130,10 @@ test Query 5 [[
   
 SELECT forum, forum.title, COUNT(post)
 MATCH
-  (person:Person) -/:knows /* TODO: one to two hops */ /-> (friend:Person),
+  (person:Person) -/@:knows/-> (friend:Person),
   (friend) <-[membership:has_member]-(forum:Forum),
   (friend) <-[:has_creator]- (post:Post) <-[:container_of]- (forum)
-WHERE person.id == 12345
+WHERE person.id = 12345
   AND membership.joinDate > DATE '2012-01-01'
 ORDER BY COUNT(post) DESC, forum.id ASC
 LIMIT 10
@@ -146,15 +146,15 @@ test Query 13 (output a table) [[
   Given two Persons, find the shortest path between these two Persons in the subgraph induced by the Knows relationships.
 */
 
-SELECT CASE WHEN EXISTS ( SELECT path MATCH (p1) -/SHORTEST path:~knows*/-> (p2) )
-            THEN ( SELECT length(path) MATCH (p1) -/SHORTEST path:~knows*/-> (p2) )
+SELECT CASE WHEN EXISTS ( SELECT path MATCH (p1)-/SHORTEST path <~knows*>/->(p2) )
+            THEN ( SELECT length(path) MATCH (p1)-/SHORTEST path <~knows*>/->(p2) )
             ELSE -1
             END AS length
-PATH knows = () -[:knows]-> ()
+PATH knows = ()-[:knows]->()
 MATCH
   (p1:Person), (p2:Person)
-WHERE p1.id == 12345
-  AND p2.id == 54321
+WHERE p1.id = 12345
+  AND p2.id = 54321
 
 ]]
 
@@ -167,9 +167,9 @@ test Query 13 (output a graph) [[
 CONSTRUCT (p1) -/path/-> (p2)
 PATH knows = () -[:knows]-> ()
 MATCH
-  (p1:Person) -/SHORTEST path:~knows*/-> (p2:Person)
-WHERE p1.id == 12345
-  AND p2.id == 54321
+  (p1:Person) -/SHORTEST path <~knows*>/-> (p2:Person)
+WHERE p1.id = 12345
+  AND p2.id = 54321
 
 ]]
 

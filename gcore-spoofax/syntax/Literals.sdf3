@@ -22,7 +22,7 @@ context-free syntax
   Label.String              = IDENTIFIER
   Boolean.True              = <TRUE> {case-insensitive}
   Boolean.False             = <FALSE> {case-insensitive}
-  Parameter.Parameter 			= <?<UNSIGNED-INT?>>
+  Parameter.Parameter 		= <?<UNSIGNED-INT?>>
   Date.Date                 = <DATE <STRING>> {case-insensitive}
   Time.Time                 = <TIME <STRING>> {case-insensitive}
   Timestamp.Timestamp       = <TIMESTAMP <STRING>> {case-insensitive}

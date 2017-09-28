@@ -1,6 +1,6 @@
 ---
 id: org.ldbcouncil:gcore-spoofax:0.1.0-SNAPSHOT
-name: gcore
+name: gcore-spoofax
 dependencies:
   compile:
   - org.metaborg:org.metaborg.meta.lang.esv:${metaborgVersion}

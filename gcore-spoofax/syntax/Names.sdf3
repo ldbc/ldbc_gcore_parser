@@ -20,7 +20,7 @@ context-free syntax
   MarcoNameDef.MarcoNameDef = IDENTIFIER //declares as new macro name 
   MarcoNameRef.MarcoNameRef = <~<IDENTIFIER>> //uses an already declaraed macro name
 
-	GraphName = IDENTIFIER
+  GraphName = IDENTIFIER
 	
 lexical syntax
 
@@ -38,9 +38,14 @@ lexical restrictions // greedy matching
 
 lexical syntax // reserved keywords
 
-  IDENTIFIER = 'true' {reject}
-  IDENTIFIER = 'false' {reject}
-  IDENTIFIER = 'not' {reject}
+  IDENTIFIER = 'true' {reject, case-insensitive}
+  IDENTIFIER = 'false' {reject, case-insensitive}
+  IDENTIFIER = 'not' {reject, case-insensitive}
+  IDENTIFIER = 'case' {reject, case-insensitive}
+  IDENTIFIER = 'null' {reject, case-insensitive}
+  IDENTIFIER = 'as' {reject, case-insensitive}
+  IDENTIFIER = 'is' {reject, case-insensitive}
+  IDENTIFIER = 'in' {reject, case-insensitive}
 
   FUNCTION-NAME = 'count' {reject}
   FUNCTION-NAME = 'min' {reject}

@@ -18,29 +18,32 @@ context-free syntax
   
   Exp.List = <[<{Exp ", "}*>]>
 
-  Exp.Not = <NOT <Exp>> {right, case-insensitive}
-  Exp.UMin = <-<Exp>> {right}
+  Exp.UMin = <-<Exp>>
+  Exp.IsNull    = <<Exp> IS NULL> {case-insensitive}
+  Exp.IsNotNull = <<Exp> IS NOT NULL> {case-insensitive}
 
-  Exp.Pow = <<Exp>^<Exp>> {left}
+  Exp.Pow = <<Exp>^<Exp>> {right}
+  
   Exp.Mul = <<Exp> * <Exp>> {left}
-  Exp.Add = <<Exp> + <Exp>> {left}
   Exp.Div = <<Exp> / <Exp>> {left}
   Exp.Mod = <<Exp> % <Exp>> {left}
+  
+  Exp.Add = <<Exp> + <Exp>> {left}
   Exp.Sub = <<Exp> - <Exp>> {left}
-  Exp.Eq = <<Exp> = <Exp>> {left}
-  Exp.Gt = [[Exp] > [Exp]] {left}
-  Exp.Lt = [[Exp] < [Exp]] {left}
-  Exp.Gte = [[Exp] >= [Exp]] {left}
-  Exp.Lte = [[Exp] <= [Exp]] {left}
-  Exp.Neq1 = [[Exp] != [Exp]] {left}
-  Exp.Neq2 = [[Exp] <> [Exp]] {left}
-  Exp.In = <<Exp> IN <Exp>> {left, case-insensitive} 
+  
+  Exp.Eq   = <<Exp> = <Exp>> {non-assoc}
+  Exp.Gt   = [[Exp] > [Exp]] {non-assoc}
+  Exp.Lt   = [[Exp] < [Exp]] {non-assoc}
+  Exp.Gte  = [[Exp] >= [Exp]] {non-assoc}
+  Exp.Lte  = [[Exp] <= [Exp]] {non-assoc}
+  Exp.Neq1 = [[Exp] != [Exp]] {non-assoc}
+  Exp.Neq2 = [[Exp] <> [Exp]] {non-assoc}
+  Exp.In   = <<Exp> IN <Exp>> {non-assoc, case-insensitive} 
 
+  Exp.Not = <NOT <Exp>> {case-insensitive}
+  
   Exp.And = <<Exp> AND <Exp>> {left, case-insensitive}
-  Exp.Or = <<Exp> OR <Exp>> {left, case-insensitive}
-
-  Exp.IsNull = <<Exp> IS NULL> {case-insensitive}
-  Exp.IsNotNull = <<Exp> IS NOT NULL> {case-insensitive}
+  Exp.Or  = <<Exp> OR <Exp>> {left, case-insensitive}
 
   Exp.SimpleCase = <CASE <Exp> <WhenThenCase+> <ElseCase?> END> {case-insensitive}
   Exp.SearchedCase = <CASE <WhenThenCase+> <ElseCase?> END> {case-insensitive}
@@ -49,9 +52,9 @@ context-free syntax
 
   Exp.Cast = <CAST(<Exp> AS <DATA-TYPE>)> {case-insensitive}
 
+  Exp.Exists = <EXISTS <Subquery>> {case-insensitive}
+  Exp.ScalarSubquery = <<Subquery>>
   Subquery.Subquery = <( <FullQuery> )>
-  Exp.Exists = <EXISTS<Subquery>> {case-insensitive}
-  Exp.ScalarSubquery = Subquery
 
   LabelPredicateExp.LabelPredicateExp = <<VarRef><LabelPredicates>>
   LabelPredicates.LabelPredicates = <<{LabelPredicate ""}+>>
@@ -79,8 +82,9 @@ context-free syntax // Aggregates
 context-free priorities
 
   {
-    right:
       Exp.UMin
+      Exp.IsNull
+      Exp.IsNotNull
   }
   >
   {

@@ -47,9 +47,13 @@ context-free syntax
   RegularPathExpression = <(<RegularPathExpression>)> {bracket}
   RegularPathExpression = LabelPredicate
   RegularPathExpression = MarcoNameRef
-  RegularPathExpression.KleeneStar = <<RegularPathExpression>*> {left}
+  RegularPathExpression.KleeneStar = <<RegularPathExpression>*<KleeneBounds?>>
   RegularPathExpression.Concatenation = <<RegularPathExpression> <RegularPathExpression>> {left}
   RegularPathExpression.Union = <<RegularPathExpression>+<RegularPathExpression>> {left}
+  KleeneBounds.Upper      = <<CURLY-OPEN><DotDot?><UNSIGNED-INT><CURLY-CLOSE>>
+  KleeneBounds.Lower      = <<CURLY-OPEN><UNSIGNED-INT><DotDot><CURLY-CLOSE>>
+  KleeneBounds.LowerUpper = <<CURLY-OPEN><UNSIGNED-INT><DotDot><UNSIGNED-INT><CURLY-CLOSE>>
+  DotDot.DotDot = ".."
 
   ObjectMatchPattern.ObjectMatchPattern = <<LabelPredicates?><PropertyPredicates?>>
 
