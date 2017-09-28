@@ -1,0 +1,176 @@
+module ldbc-snb-interactive
+
+language gcore-spoofax
+
+/*
+  For query specifications, see https://github.com/ldbc/ldbc_snb_docs/blob/master/query-specifications
+*/
+
+test Query 1 [[
+
+/*
+  Given a start Person, find Persons with a given first name
+  that the start Person is connected to (excluding start Person) by
+  at most 3 steps via Knows relationships. Return Persons, including
+  summaries of the Persons workplaces and places of study.
+*/
+
+SELECT friend.id, friend.lastName, length(p) AS distance, friend.birthday, friend.creationDate, friend.gender
+     , friend.browserUsed, friend.locationIP, friend.email, friend.speaks, friendCity.name
+     , ( SELECT GROUP_CONCAT(uni.name + ' ' + studyAt.year + ' ' + uniCity.name)
+         MATCH (friend) -[studyAt:study_at]-> (uni:University) -[:is_located_in]-> (uniCity:City)
+       ) AS unis
+     , ( SELECT GROUP_CONCAT(company.name + ' ' + worksAt.workFrom + ' ' + companyCountry.name)
+         MATCH (friend) -[worksAt:works_at]-> (company:Company) -[:is_located_in]-> (companyCountry:Country)
+       ) AS work
+MATCH (person:Person) -/p:knows/* TODO: one to three hops */ /-> (friend:Person) -[:is_located_in]-> (friendCity:City)
+WHERE person.id == 123
+  AND person <> friend
+  AND friend.firstName == 'John'
+ORDER BY distance ASC, friend.lastName ASC, friend.id ASC
+LIMIT 20
+
+]]
+
+test Query 2 [[
+
+/*
+  Given a start Person, find (most recent) Messages from all of that Person's friends,
+  that were created before (and including) a given date.
+*/
+
+SELECT friend.id, friend.firstName, friend.lastName
+     , message.id, message.creationDate
+     , CASE message.content IS NOT NULL WHEN true THEN message.content ELSE message.imageFile END AS messageContent
+MATCH (person:Person) -[:knows]-> (friend:Person) <-[:has_creator]- (message:Post /* TODO: Post|Comment instead of Post */)
+WHERE person.id == 12345
+  AND message.creationDate <= DATE '2010-01-01'
+ORDER BY message.creationDate DESC, message.id ASC
+LIMIT 10
+
+]]
+
+test Query 3 [[
+
+/*
+  Given a start Person, find Persons that are their friends and
+  friends of friends (excluding start Person) that have made
+  Posts/Comments in both of the given Countries, X and Y, within a
+  given period.  Only Persons that are foreign to Countries X and Y
+  are considered, that is Persons whose Location is not Country X or
+  Country Y.
+*/
+
+SELECT friend.id, friend.firstName, friend.lastName,
+       ( SELECT COUNT(messageX)
+         MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
+         WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
+           AND countryX.name == 'India'
+       ) AS count1,
+       ( SELECT COUNT(messageX)
+         MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
+         WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
+           AND countryX.name == 'China'
+       ) AS count2,
+       count1 + count2 AS count
+MATCH (person:Person) -/:knows /* TODO: one to two hops */ /-> (friend:Person)
+WHERE person.id == 12345
+  AND person <> friend
+  AND NOT EXISTS ( SELECT countryXY
+                   MATCH (friend) -[:is_located_in]-> () -[:is_part_of]-> (countryXY)
+                   WHERE countryXY.name == 'India' OR countryXY.name == 'China'
+                 )
+  AND EXISTS ( SELECT countryX
+               MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
+               WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
+                 AND countryX.name == 'India'
+             )
+  AND EXISTS ( SELECT countryY
+               MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryY:Country)
+               WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
+                 AND countryY.name == 'China'
+             )
+ORDER BY (cnt1 + cnt2) DESC, friend.id ASC
+LIMIT 20
+
+]]
+
+test Query 4 [[
+
+/*
+  Given a start Person, find Tags that are attached to Posts that
+  were created by that Person's friends.  Only include Tags that were
+  attached to friends' Posts created within a given time interval, and that
+  were never attached to friends' Posts created before this interval.
+*/
+
+SELECT tag.name, COUNT(post)
+MATCH (person:Person) -[:knows]-> (friend:Person) <-[:has_creator]- (post:Post) -[:has_tag]-> (tag:Tag)
+WHERE person.id == 12345
+  AND between(post.creationDate, DATE '2012-01-01', DATE '2012-02-01')
+  AND NOT EXISTS( SELECT oldPost
+                  MATCH (tag) <-[:has_tag]- (oldPost:Post)
+                  WHERE oldPost.creationDate < DATE '2012-01-01'
+                )
+ORDER BY COUNT(post) DESC, tag.name ASC
+LIMIT 10
+
+]]
+
+test Query 5 [[
+
+/*
+  Given a start Person, find the Forums which that Person's friends
+  and friends of friends (excluding start Person) became Members of
+  after a given date.  For each forum find the number of Posts
+  that were created by any of these Persons.
+  For each Forum and consider only those Persons which joined that particular
+  Forum after the given date.
+*/
+  
+SELECT forum, forum.title, COUNT(post)
+MATCH
+  (person:Person) -/:knows /* TODO: one to two hops */ /-> (friend:Person),
+  (friend) <-[membership:has_member]-(forum:Forum),
+  (friend) <-[:has_creator]- (post:Post) <-[:container_of]- (forum)
+WHERE person.id == 12345
+  AND membership.joinDate > DATE '2012-01-01'
+ORDER BY COUNT(post) DESC, forum.id ASC
+LIMIT 10
+
+]]
+
+test Query 13 (output a table) [[
+
+/*
+  Given two Persons, find the shortest path between these two Persons in the subgraph induced by the Knows relationships.
+*/
+
+SELECT CASE WHEN EXISTS ( SELECT path MATCH (p1) -/SHORTEST path:~knows*/-> (p2) )
+            THEN ( SELECT length(path) MATCH (p1) -/SHORTEST path:~knows*/-> (p2) )
+            ELSE -1
+            END AS length
+PATH knows = () -[:knows]-> ()
+MATCH
+  (p1:Person), (p2:Person)
+WHERE p1.id == 12345
+  AND p2.id == 54321
+
+]]
+
+test Query 13 (output a graph) [[
+
+/*
+  Given two Persons, find the shortest path between these two Persons in the subgraph induced by the Knows relationships.
+*/
+
+CONSTRUCT (p1) -/path/-> (p2)
+PATH knows = () -[:knows]-> ()
+MATCH
+  (p1:Person) -/SHORTEST path:~knows*/-> (p2:Person)
+WHERE p1.id == 12345
+  AND p2.id == 54321
+
+]]
+
+

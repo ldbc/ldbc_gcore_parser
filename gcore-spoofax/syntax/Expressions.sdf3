@@ -4,6 +4,7 @@ imports
 
   Names
   Literals
+  gcore
 
 context-free syntax
 
@@ -37,19 +38,21 @@ context-free syntax
 
   Exp.And = <<Exp> AND <Exp>> {left, case-insensitive}
   Exp.Or = <<Exp> OR <Exp>> {left, case-insensitive}
-  
-  Exp.Case = <
-  CASE <Exp>
-  <WhenThenCase+>
-  <ElseCase?>
-  END> {case-insensitive}
-	WhenThenCase.WhenThenCase = <WHEN <Exp> THEN <Exp>> {case-insensitive}
-	ElseCase.ElseCase = <ELSE <Exp>> {case-insensitive}
+
+  Exp.IsNull = <<Exp> IS NULL> {case-insensitive}
+  Exp.IsNotNull = <<Exp> IS NOT NULL> {case-insensitive}
+
+  Exp.SimpleCase = <CASE <Exp> <WhenThenCase+> <ElseCase?> END> {case-insensitive}
+  Exp.SearchedCase = <CASE <WhenThenCase+> <ElseCase?> END> {case-insensitive}
+  WhenThenCase.WhenThenCase = <WHEN <Exp> THEN <Exp>> {case-insensitive}
+  ElseCase.ElseCase = <ELSE <Exp>> {case-insensitive}
 
   Exp.Cast = <CAST(<Exp> AS <DATA-TYPE>)> {case-insensitive}
 
-  //Exp.Exists = <exists( <Query> )> {case-insensitive}
-  
+  Subquery.Subquery = <( <FullQuery> )>
+  Exp.Exists = <EXISTS<Subquery>> {case-insensitive}
+  Exp.ScalarSubquery = Subquery
+
   LabelPredicateExp.LabelPredicateExp = <<VarRef><LabelPredicates>>
   LabelPredicates.LabelPredicates = <<{LabelPredicate ""}+>>
   LabelPredicate.LabelPredicate = <:<Label>>
@@ -67,6 +70,7 @@ context-free syntax // Aggregates
   Exp.max          = <MAX(<Distinct?><Exp>)> {case-insensitive}
   Exp.sum          = <SUM(<Distinct?><Exp>)> {case-insensitive}
   Exp.avg          = <AVG(<Distinct?><Exp>)> {case-insensitive}
+  Exp.group-concat = <GROUP_CONCAT(<Distinct?><Exp>)> {case-insensitive} // concatenation of group of strings using comma (,) as separator
 
   StarOrExp.Star = <*>
   StarOrExp = <<Exp>>
