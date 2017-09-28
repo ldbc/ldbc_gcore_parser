@@ -1,11 +1,11 @@
 //select t.name, (x.age+y.age)/2
 construct (x)-[:mutualInterest]->(y)<-[:mutualInterest]-(x), 
-	(x)->(i=t group t.name :Interest {name = t.name})<-(y) when i.rating == 5, 
-	(i)->(t) when i.rating == 5 set i.date = case y.state when 0.3 then today() when 1.57 then yesterday() else 0 end
+	(x)->(i=t group t.name :Interest {name := t.name})<-(y) when i.rating = 5, 
+	(i)->(t) when i.rating = 5 set i.date := case y.state when 0.3 then today() when 1.57 then yesterday() else 0 end
 	remove i:TVShow:Comedy
 path produceBy = ()-()
 path locatedIn = ()-()
-match (x:Person {name == 'Peter'})-[:like]->(t:TVShow:Comedy), (t)<-[:like]-(y:Person {name == ?}),
-	(x)-/@r:PersonalRelation {quality == 3}/->()
-	optional (t)-/shortest @ <~produceBy*> :StationPath {length == 3}/->(s:Station)-/<~locatedIn*>/->( )<-/<(:inCity:inState:capital)+~locatedIn*>/-()<-[:lifesIn]-(x)
-where x.name != y.name and s.year >= 2000 and not (s.name == 'RTL' aND rating2Bad(t.rating^3)) and ('Friends' in labels(r) Or r:Coworkers)
+match (x:Person {name = 'Peter'})-[:like]->(t:TVShow:Comedy), (t)<-[:like]-(y:Person {name = ?}),
+	(x)-/@r:PersonalRelation {quality = 3}/->()
+	optional (t)-/shortest @ <~produceBy*> :StationPath {length = 3}/->(s:Station)-/<~locatedIn*>/->( )<-/<(:inCity:inState:capital)+~locatedIn*>/-()<-[:lifesIn]-(x)
+where x.name != y.name and s.year >= 2000 and not (s.name = 'RTL' aND rating2Bad(t.rating^3)) and ('Friends' in labels(r) Or r:Coworkers)
