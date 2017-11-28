@@ -56,9 +56,9 @@ context-free syntax
   Exp.ScalarSubquery = <<Subquery>>
   Subquery.Subquery = <( <FullQuery> )>
 
-  LabelPredicateExp.LabelPredicateExp = <<VarRef><LabelPredicates>>
-  LabelPredicates.LabelPredicates = <<{LabelPredicate ""}+>>
-  LabelPredicate.LabelPredicate = <:<Label>>
+  LabelPredicateExp.LabelPredicateExp = <<VarRef><ConjunctLabels>>
+  ConjunctLabels.ConjunctLabels = DisjunctLabels+
+  DisjunctLabels.DisjunctLabels = <:<{Label "|"}+>>
 
 context-free syntax // function calls
 

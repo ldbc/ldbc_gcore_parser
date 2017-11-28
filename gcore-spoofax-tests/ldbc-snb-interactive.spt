@@ -1,12 +1,6 @@
-module ldbc-snb-interactive
+module ldbc-snb-interactive // for query specifications, see https://github.com/ldbc/ldbc_snb_docs
 
 language gcore-spoofax
-
-/*
-  For query specifications, see https://github.com/ldbc/ldbc_snb_docs/blob/master/query-specifications
-*/
-
-test Query 1 [[
 
 /*
   Given a start Person, find Persons with a given first name
@@ -14,43 +8,41 @@ test Query 1 [[
   at most 3 steps via Knows relationships. Return Persons, including
   summaries of the Persons workplaces and places of study.
 */
+test Query 1 [[
 
-SELECT friend.id, friend.lastName, length(p) AS distance, friend.birthday, friend.creationDate, friend.gender
-     , friend.browserUsed, friend.locationIP, friend.email, friend.speaks, friendCity.name
-     , ( SELECT GROUP_CONCAT(uni.name + ' ' + studyAt.year + ' ' + uniCity.name)
-         MATCH (friend) -[studyAt:study_at]-> (uni:University) -[:is_located_in]-> (uniCity:City)
-       ) AS unis
-     , ( SELECT GROUP_CONCAT(company.name + ' ' + worksAt.workFrom + ' ' + companyCountry.name)
-         MATCH (friend) -[worksAt:works_at]-> (company:Company) -[:is_located_in]-> (companyCountry:Country)
-       ) AS work
-MATCH (person:Person) -/p <:knows*{1..3}> /-> (friend:Person) -[:is_located_in]-> (friendCity:City)
-WHERE person.id = 123
-  AND person <> friend
-  AND friend.firstName = 'John'
-ORDER BY distance ASC, friend.lastName ASC, friend.id ASC
-LIMIT 20
+    SELECT friend.id, friend.lastName, length(p) AS distance, friend.birthday, friend.creationDate, friend.gender
+         , friend.browserUsed, friend.locationIP, friend.email, friend.speaks, friendCity.name
+         , ( SELECT GROUP_CONCAT(uni.name + ' ' + studyAt.year + ' ' + uniCity.name)
+             MATCH (friend) -[studyAt:study_at]-> (uni:University) -[:isLocatedIn]-> (uniCity:City)
+           ) AS unis
+         , ( SELECT GROUP_CONCAT(company.name + ' ' + worksAt.workFrom + ' ' + companyCountry.name)
+             MATCH (friend) -[worksAt:works_at]-> (company:Company) -[:isLocatedIn]-> (companyCountry:Country)
+           ) AS work
+     MATCH (person:Person) -/p <:knows*{1..3}> /-> (friend:Person) -[:isLocatedIn]-> (friendCity:City)
+     WHERE person.id = ?
+       AND person <> friend
+       AND friend.firstName = 'John'
+  ORDER BY distance ASC, friend.lastName ASC, friend.id ASC
+     LIMIT 20
 
 ]]
-
-test Query 2 [[
 
 /*
   Given a start Person, find (most recent) Messages from all of that Person's friends,
   that were created before (and including) a given date.
 */
+test Query 2 [[
 
-SELECT friend.id, friend.firstName, friend.lastName
-     , message.id, message.creationDate
-     , CASE message.content IS NOT NULL WHEN true THEN message.content ELSE message.imageFile END AS messageContent
-MATCH (person:Person) -[:knows]-> (friend:Person) <-[:has_creator]- (message:Post /* TODO: Post|Comment instead of Post */)
-WHERE person.id = 12345
-  AND message.creationDate <= DATE '2010-01-01'
-ORDER BY message.creationDate DESC, message.id ASC
-LIMIT 10
+    SELECT friend.id, friend.firstName, friend.lastName
+         , message.id, message.creationDate
+         , CASE message.content IS NOT NULL WHEN true THEN message.content ELSE message.imageFile END AS messageContent
+     MATCH (person:Person) -[:knows]-> (friend:Person) <-[:hasCreator]- (message:Post|Comment)
+     WHERE person.id = ?
+       AND message.creationDate <= ?
+  ORDER BY message.creationDate DESC, message.id ASC
+     LIMIT 10
 
 ]]
-
-test Query 3 [[
 
 /*
   Given a start Person, find Persons that are their friends and
@@ -60,42 +52,41 @@ test Query 3 [[
   are considered, that is Persons whose Location is not Country X or
   Country Y.
 */
+test Query 3 [[
 
-SELECT friend.id, friend.firstName, friend.lastName,
-       ( SELECT COUNT(messageX)
-         MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
-         WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
-           AND countryX.name = 'India'
-       ) AS count1,
-       ( SELECT COUNT(messageX)
-         MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
-         WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
-           AND countryX.name = 'China'
-       ) AS count2,
-       count1 + count2 AS count
-MATCH (person:Person) -/<:knows*{1..2}>/-> (friend:Person)
-WHERE person.id = 12345
-  AND person <> friend
-  AND NOT EXISTS ( SELECT countryXY
-                   MATCH (friend) -[:is_located_in]-> () -[:is_part_of]-> (countryXY)
-                   WHERE countryXY.name = 'India' OR countryXY.name = 'China'
-                 )
-  AND EXISTS ( SELECT countryX
-               MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryX:Country)
-               WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
-                 AND countryX.name = 'India'
-             )
-  AND EXISTS ( SELECT countryY
-               MATCH (friend) <-[:has_creator]- (messageX) -[:is_located_in]-> (countryY:Country)
-               WHERE between(messageX.creationDate, DATE '2012-02-01', DATE '2012-01-01')
-                 AND countryY.name = 'China'
-             )
-ORDER BY (cnt1 + cnt2) DESC, friend.id ASC
-LIMIT 20
+    SELECT friend.id, friend.firstName, friend.lastName,
+           ( SELECT COUNT(messageX)
+             MATCH (friend) <-[:hasCreator]- (messageX) -[:isLocatedIn]-> (countryX:Country)
+             WHERE between(messageX.creationDate, ?, ?)
+               AND countryX.name = 'India'
+           ) AS count1,
+           ( SELECT COUNT(messageX)
+             MATCH (friend) <-[:hasCreator]- (messageX) -[:isLocatedIn]-> (countryX:Country)
+             WHERE between(messageX.creationDate, ?, ?)
+               AND countryX.name = 'China'
+           ) AS count2,
+           count1 + count2 AS count
+     MATCH (person:Person) -/<:knows*{1..2}>/-> (friend:Person)
+     WHERE person.id = ?
+       AND person <> friend
+       AND NOT EXISTS ( SELECT countryXY
+                         MATCH (friend) -[:isLocatedIn]-> () -[:is_part_of]-> (countryXY)
+                         WHERE countryXY.name = 'India' OR countryXY.name = 'China'
+                      )
+       AND EXISTS ( SELECT countryX
+                    MATCH (friend) <-[:hasCreator]- (messageX) -[:isLocatedIn]-> (countryX:Country)
+                    WHERE between(messageX.creationDate, ?, ?)
+                      AND countryX.name = 'India'
+                  )
+       AND EXISTS ( SELECT countryY
+                    MATCH (friend) <-[:hasCreator]- (messageX) -[:isLocatedIn]-> (countryY:Country)
+                    WHERE between(messageX.creationDate, ?, ?)
+                      AND countryY.name = 'China'
+                  )
+  ORDER BY (cnt1 + cnt2) DESC, friend.id ASC
+     LIMIT 20
 
 ]]
-
-test Query 4 [[
 
 /*
   Given a start Person, find Tags that are attached to Posts that
@@ -103,21 +94,20 @@ test Query 4 [[
   attached to friends' Posts created within a given time interval, and that
   were never attached to friends' Posts created before this interval.
 */
+test Query 4 [[
 
-SELECT tag.name, COUNT(post)
-MATCH (person:Person) -[:knows]-> (friend:Person) <-[:has_creator]- (post:Post) -[:has_tag]-> (tag:Tag)
-WHERE person.id = 12345
-  AND between(post.creationDate, DATE '2012-01-01', DATE '2012-02-01')
-  AND NOT EXISTS( SELECT oldPost
-                  MATCH (tag) <-[:has_tag]- (oldPost:Post)
-                  WHERE oldPost.creationDate < DATE '2012-01-01'
-                )
-ORDER BY COUNT(post) DESC, tag.name ASC
-LIMIT 10
+    SELECT tag.name, COUNT(post)
+     MATCH (person:Person) -[:knows]-> (friend:Person) <-[:hasCreator]- (post:Post) -[:has_tag]-> (tag:Tag)
+     WHERE person.id = ?
+       AND between(post.creationDate, ?, ?)
+       AND NOT EXISTS( SELECT oldPost
+                        MATCH (tag) <-[:has_tag]- (oldPost:Post)
+                        WHERE oldPost.creationDate < ?
+                     )
+  ORDER BY COUNT(post) DESC, tag.name ASC
+     LIMIT 10
 
 ]]
-
-test Query 5 [[
 
 /*
   Given a start Person, find the Forums which that Person's friends
@@ -127,50 +117,233 @@ test Query 5 [[
   For each Forum and consider only those Persons which joined that particular
   Forum after the given date.
 */
+test Query 5 [[
   
-SELECT forum, forum.title, COUNT(post)
-MATCH
-  (person:Person) -/@:knows/-> (friend:Person),
-  (friend) <-[membership:has_member]-(forum:Forum),
-  (friend) <-[:has_creator]- (post:Post) <-[:container_of]- (forum)
-WHERE person.id = 12345
-  AND membership.joinDate > DATE '2012-01-01'
-ORDER BY COUNT(post) DESC, forum.id ASC
-LIMIT 10
+    SELECT forum, forum.title, COUNT(post)
+     MATCH (person:Person) -/@:knows/-> (friend:Person)
+         , (friend) <-[membership:has_member]-(forum:Forum)
+         , (friend) <-[:hasCreator]- (post:Post) <-[:container_of]- (forum)
+     WHERE person.id = ?
+       AND membership.joinDate > ?
+  ORDER BY COUNT(post) DESC, forum.id ASC
+     LIMIT 10
 
 ]]
 
+/*
+  Given a start Person and some Tag, find the other Tags that occur together with this Tag on Posts
+  that were created by start Person’s friends and friends of friends (excluding start Person). Return
+  For each Tag, find the count of Posts that were created by these Persons, which contain both this
+  Tag and the given Tag.
+*/
+test Query 6 [[
+
+SELECT tag.name, COUNT(post)
+     MATCH (person:Person) -/ <:knows*{1..2}> /-> (friend:Person)
+         , (friend) <-[:hasCreator]- (post:Post) -[:has_tag]-> (knownTag:Tag)
+         , (post) -[:has_tag]-> (tag:Tag)
+     WHERE person.id = ?
+       AND knownTag.name = ?
+  ORDER BY COUNT(post) DESC, tag.name ASC
+     LIMIT 10
+
+]]
+
+/*
+  Given a start Person, find (most recent) Likes on any of start Person’s Messages. Find Persons
+  that Liked any of start Person’s Messages, the Messages they liked most recently, creation date
+  of that Like, and the latency (in minutes) between creation of Messages and Like. Additionally,
+  for each Person found return a flag indicating whether the liker is a friend of start Person. In the
+  case that a Person Liked multiple Messages at the same time, return the Message with lowest
+  identifier.
+*/
+test Query 7 [[
+
+     SELECT liker.id, liker.firstName, liker.lastName
+          , like.creationDate
+          , message.creationDate - like.creationDate AS lag
+          , EXISTS( SELECT person MATCH (liker) -[:knows]-> (person) ) AS is_new
+          , CASE WHEN message.content IS NOT NULL
+                 THEN message.content
+                 ELSE message.image
+                 END AS content
+     MATCH (person) <-[:hasCreator]- (message:Post|Comment) <-[like:likes]- (liker)
+     WHERE liker.id = (
+                           SELECT MIN(liker.id) AS smallestLikerId
+                            MATCH (person) <-[:hasCreator]- (:Post|Comment) <-[:likes]- (liker)
+                         GROUP BY person, liker
+                      )
+       AND liked.creationDate = (
+                                    SELECT person, liker, MAX(like.creationDate) AS mostRecentLikeCreationDate
+                                     MATCH (person) <-[:hasCreator]- (:Post|Comment) <-[:likes]- (liker)
+                                  GROUP BY person, liker
+                                )
+       AND person.id = ?
+  ORDER BY like.creationDate DESC, liker ASC
+     LIMIT 20
+
+]]
+
+/*
+  Given a start Person, find (most recent) Comments that are replies to Messages of the start Person.
+  Only consider immediate (1-hop) replies, not the transitive (multi-hop) case. Return the reply
+  Comments, and the Person that created each reply Comment.
+*/
+test Query 8 [[
+
+     SELECT person.id, person.firstName, person.lastName, comment.id, comment.creationDate, comment.content
+     MATCH (start:Person) <-[:has_creator]- () <-[:reply_of]- (comment:Comment) -[:has_creator]-> (person:Person)
+     WHERE start.id = ?
+  ORDER BY comment.creationDate DESC, comment.id ASC
+     LIMIT 10
+
+]]
+
+/*
+  Given a start Person, find the (most recent) Messages created by that Person’s friends or friends
+  of friends (excluding start Person). Only consider the Messages created before a given date
+  (excluding that date).
+*/
+test Query 9 [[
+
+  SELECT friend.id, friend.firstName, friend.lastName
+       , message.id
+       , CASE WHEN message.content IS NOT NULL
+              THEN message.content
+              ELSE message.image
+               END AS CONTENT
+       , message.creationDate
+  MATCH (start:Person)-/<:knows*{1..2}>/-> (friend:Person)
+       , (friend) <-[:has_creator]- (message:Post|Comment)
+  WHERE start.id = ?
+    AND message.creationDate < ?
+  ORDER BY message.creationDate DESC, message.id ASC
+  LIMIT 20
+
+]]
+
+/*
+  Given a start Person, find that Person’s friends of friends (excluding start Person, and immediate
+  friends), who were born on or after the 21st of a given month (in any year) and before the 22nd
+  of the following month. Calculate the similarity between each of these Persons and start Person,
+  where similarity for any Person is defined as follows:
+    • common = number of Posts created by that Person, such that the Post has a Tag that start
+      Person is Interested in
+    • uncommon = number of Posts created by that Person, such that the Post has no Tag that
+      start Person is Interested in
+    • similarity = common - uncommon
+*/
+test Query 10 [[
+
+     SELECT friend.id, friend.firstName, friend.lastName, friend.gender, city.name
+          , (  (
+                 SELECT COUNT(post) AS sameInterest
+                  MATCH (friend) <-[:has_creator]- (post:Post) -[:has_tag]-> (:Tag) <-[:has_interest]- (person)
+               ) - (
+                 SELECT COUNT(post) AS diffInterest
+                  MATCH (friend) <-[:has_creator]- (post:Post) -[:has_tag]-> (tag:Tag)
+                  WHERE NOT EXISTS( SELECT e MATCH (tag) <-[e:has_interest]- (person) )
+               )
+            ) AS similarity
+     MATCH (person:Person) -/ <:knows*{2..2}> /-> (friend:Person) -[:is_located_in]-> (city:City)
+     WHERE person.id = ?
+       AND ( (friend.birthday_month = ? AND friend.birthday_day >= ?) OR
+             (friend.birthday_month = (? + ?) % 12 AND friend.birthday_day < ?))
+  ORDER BY similarity DESC, friend.id ASC
+     LIMIT 10
+
+]]
+
+/*
+  Given a start Person, find that Person’s friends and friends of friends (excluding start Person)
+  who started Working in some Company in a given Country, before a given date (year).
+*/
+test Query 11 [[
+
+    SELECT friend.id, friend.firstName, friend.lastName
+         , works.workFrom, company.name
+     MATCH (start:Person)-/<:knows*{1..2}>/-> (friend:Person)
+         , (friend) -[works:worksAt]-> (company:Company) -[:isLocatedIn]-> (country:Country)
+     WHERE start.id = ?
+       AND works.workFrom < ?
+       AND country.name = ?
+  ORDER BY works.workFrom ASC, friend.id ASC, company.name DESC
+     LIMIT 10
+
+]]
+
+/*
+  Given a start Person, find the Comments that this Person’s friends made in reply to Posts, con-
+  sidering only those Comments that are immediate (1-hop) replies to Posts, not the transitive
+  (multi-hop) case. Only consider Posts with a Tag in a given TagClass or in a descendent of that
+  TagClass. Count the number of these reply Comments, and collect the Tags that were attached
+  to the Posts they replied to, but only collect Tags with the given TagClass or with a descendant of
+  that TagClass Return Persons with at least one reply, the reply count, and the collection of Tags.
+*/
+test Query 12 [[
+
+   SELECT friend.id, friend.firstName, friend.lastName
+        , GROUP_CONCAT(tag.name)
+        , COUNT(comment)
+    MATCH (start:Person) -[:knows]-> (expert:Person) <-[:has_creator]- (comment:Comment) -[:reply_of]-> (post:Post) -[:has_tag]-> (tag:Tag)
+        , (tag) -[:has_type]-> () -/ <:isSubclassOf*> /-> (tagClass:TagClass)
+     WHERE start.id = ?
+       AND (tagClass.name = 'TagClass' OR baseTagClass.name = 'TagClass')
+  ORDER BY COUNT(comment) DESC, friend.id ASC
+     LIMIT 20
+
+]]
+
+/*
+  Given two Persons, find the shortest path between these two Persons in the subgraph induced by the Knows relationships.
+*/
 test Query 13 (output a table) [[
 
-/*
-  Given two Persons, find the shortest path between these two Persons in the subgraph induced by the Knows relationships.
-*/
-
-SELECT CASE WHEN EXISTS ( SELECT path MATCH (p1)-/SHORTEST path <~knows*>/->(p2) )
-            THEN ( SELECT length(path) MATCH (p1)-/SHORTEST path <~knows*>/->(p2) )
-            ELSE -1
-            END AS length
-PATH knows = ()-[:knows]->()
-MATCH
-  (p1:Person), (p2:Person)
-WHERE p1.id = 12345
-  AND p2.id = 54321
+  SELECT CASE WHEN EXISTS ( SELECT path MATCH (p1)-/SHORTEST path <~knows*>/->(p2) )
+              THEN ( SELECT length(path) MATCH (p1)-/SHORTEST path <~knows*>/->(p2) )
+              ELSE -1
+              END AS length
+    PATH knows = ()-[:knows]->()
+   MATCH (p1:Person), (p2:Person)
+   WHERE p1.id = ?
+     AND p2.id = ?
 
 ]]
 
+/*
+  Given two Persons, find the shortest path between these two Persons in the subgraph induced by the Knows relationships.
+*/
 test Query 13 (output a graph) [[
 
-/*
-  Given two Persons, find the shortest path between these two Persons in the subgraph induced by the Knows relationships.
-*/
-
-CONSTRUCT (p1) -/path/-> (p2)
-PATH knows = () -[:knows]-> ()
-MATCH
-  (p1:Person) -/SHORTEST path <~knows*>/-> (p2:Person)
-WHERE p1.id = 12345
-  AND p2.id = 54321
+  CONSTRUCT (p1) -/@path/-> (p2)
+       PATH knows = () -[:knows]-> ()
+      MATCH (p1:Person) -/SHORTEST path <~knows*>/-> (p2:Person)
+      WHERE p1.id = ?
+        AND p2.id = ?
 
 ]]
 
+/*
+  Given two Persons, find a single weighted shortest paths between these two Persons, in the sub-
+  graph induced by the Knows relationship.
+  The nodes in the path are Persons, and the weight of a path is the sum of weights between every pair of
+  consecutive Person nodes in the path. The weight for a pair of Persons is calculated such that
+  every reply (by one of the Persons) to a Post (by the other Person) contributes 1.0, and every
+  reply (by ones of the Persons) to a Comment (by the other Person) contributes 0.5. Return the
+  path if one exists.
+*/
+test Query 14 [[
 
+  CONSTRUCT (p1) -/@path/-> (p2)
+       PATH reply_to_post = (personA) <-[:hasCreator]- (:Comment) -[:replyOf]-> (:Post) -[:hasCreator]-> (personB)
+       PATH reply_to_comment = (personA) <-[:hasCreator]- (:Comment) -[:replyOf]-> (:Comment) -[:hasCreator]-> (personB)
+       PATH weighted_knows = (personA) -[:knows]-> (personB)
+                             COST 1.0 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_post>/-> (personB) )
+                                + 1.0 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_post>/-> (personA) )
+                                + 0.5 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_comment>/-> (personB) )
+                                + 0.5 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_comment>/-> (personA) )
+      MATCH (p1:Person) -/SHORTEST path <~weighted_knows*>/-> (p2:Person)
+      WHERE p1.id = ?
+        AND p2.id = ?
+
+]]

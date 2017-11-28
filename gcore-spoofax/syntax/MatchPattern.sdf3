@@ -12,8 +12,7 @@ context-free syntax
 		<<FullMatchPattern> 
 		  <OptionalMatchPattern*>>
 	
-  OptionalMatchPattern.OptionalMatchPattern =	<OPTIONAL 
-<FullMatchPattern>> {case-insensitive}
+  OptionalMatchPattern.OptionalMatchPattern =	<OPTIONAL <FullMatchPattern>> {case-insensitive}
 
   FullMatchPattern.FullMatchPattern = <<{BasicMatchPattern ", \n"}+>>
 
@@ -45,7 +44,7 @@ context-free syntax
   
   PathExpression.PathExpression = <<LT><RegularPathExpression><GT>>
   RegularPathExpression = <(<RegularPathExpression>)> {bracket}
-  RegularPathExpression = LabelPredicate
+  RegularPathExpression = DisjunctLabels
   RegularPathExpression = MarcoNameRef
   RegularPathExpression.KleeneStar = <<RegularPathExpression>*<KleeneBounds?>>
   RegularPathExpression.Concatenation = <<RegularPathExpression> <RegularPathExpression>> {left}
@@ -55,7 +54,8 @@ context-free syntax
   KleeneBounds.LowerUpper = <<CURLY-OPEN><UNSIGNED-INT><DotDot><UNSIGNED-INT><CURLY-CLOSE>>
   DotDot.DotDot = ".."
 
-  ObjectMatchPattern.ObjectMatchPattern = <<LabelPredicates?><PropertyPredicates?>>
+  ObjectMatchPattern.ObjectMatchPattern = <<LabelPredicate?><PropertyPredicates?>>
+  LabelPredicate = ConjunctLabels
 
   PropertyPredicates.Props = < <CURLY-OPEN><{PropertyPredicate ", "}*><CURLY-CLOSE>>
   PropertyPredicate.Prop = <<Prop> = <Literal>>

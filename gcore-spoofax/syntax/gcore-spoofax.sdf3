@@ -36,6 +36,7 @@ context-free syntax
 		<PathClause?>
 		<MatchClause> 
 		<WhereClause?>
+		<GroupByClause?>
 		<OrderByClause?>
 		<LimitOffsetClauses?>
 	>
