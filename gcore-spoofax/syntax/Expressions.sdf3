@@ -53,7 +53,7 @@ context-free syntax
   Exp.Cast = <CAST(<Exp> AS <DATA-TYPE>)> {case-insensitive}
 
   Exp.Exists = <EXISTS <Subquery>> {case-insensitive}
-  Exp.ScalarSubquery = <<Subquery>>
+  Exp.ScalarSubquery = Subquery
   Subquery.Subquery = <( <FullQuery> )>
 
   LabelPredicateExp.LabelPredicateExp = <<VarRef><ConjunctLabels>>

@@ -7,16 +7,10 @@ imports
   Expressions
 
 context-free syntax
-	
-  MatchPattern.MatchPattern =
-		<<FullMatchPattern> 
-		  <OptionalMatchPattern*>>
-	
-  OptionalMatchPattern.OptionalMatchPattern =	<OPTIONAL <FullMatchPattern>> {case-insensitive}
 
-  FullMatchPattern.FullMatchPattern = <<{BasicMatchPattern ", \n"}+>>
+  FullMatchPattern.FullMatchPattern = {BasicMatchPattern ","}+
 
-  BasicMatchPattern.BasicMatchPattern = <<VertexMatchPattern><{EdgeVertexMatchPattern ""}*>>
+  BasicMatchPattern.BasicMatchPattern = <<VertexMatchPattern><EdgeVertexMatchPattern*>>
   VertexMatchPattern.Vertex = <(<VarDef?><ObjectMatchPattern>)>
 
   EdgeVertexMatchPattern.EdgeVertexMatchPattern = <<ConnectionMatchPattern><VertexMatchPattern>>
@@ -28,7 +22,7 @@ context-free syntax
   ConnectionMatchPattern.InEdge = [<-]
   ConnectionMatchPattern.InOutEdge = [<->]
   ConnectionMatchPattern.UndirectedEdge = [-]
-  
+
   EdgeOrPathMatchPattern.Edge = EdgeMatchPattern
   EdgeOrPathMatchPattern.Path = PathMatchPattern
   

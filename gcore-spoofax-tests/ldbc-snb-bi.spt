@@ -3,6 +3,275 @@ module ldbc-snb-bi // for query specifications, see https://github.com/ldbc/ldbc
 language gcore-spoofax
 
 /*
+  Given a date, find all Messages created before that date. Group them by a 3-level grouping:
+  1. by year of creation
+  2. for each year, group into Message types: is Comment or not
+  3. for each year-type group, split into four groups based on length of their content
+      • 0 : 0 <= length < 40 (short)
+      • 1 : 40 <= length < 80 (one liner)
+      • 2 : 80 <= length < 160 (tweet)
+      • 3 : 160 <= length (long)
+*/
+test Query 1 (without tabular GROUP BY) [[
+
+    SELECT r.messageYear AS messageYear
+         , r.isComment AS isComment
+         , r.lengthCategory AS lengthCategory
+         , r.messageCount AS messageCount
+         , r.averageMessageLength AS averageMessageLength
+         , r.sumMessageLength AS sumMessageLength
+         , r.percentageOfMessages AS percentageOfMessages
+     MATCH (r)
+        ON (
+             CONSTRUCT (r GROUP message.creationDate
+                              , (message:Comment)
+                              , CASE WHEN message.length < 40 THEN 0
+                                     WHEN message.length < 80 THEN 1
+                                     WHEN message.length < 160 THEN 2
+                                     ELSE 3
+                                 END
+                         :Result)
+                       SET r.messageYear := message.creationDate
+                       SET r.isComment := (message:Comment)
+                       SET r.lengthCategory := CASE WHEN message.length < 40 THEN 0
+                                                    WHEN message.length < 80 THEN 1
+                                                    WHEN message.length < 160 THEN 2
+                                                    ELSE 3
+                                                     END
+                       SET r.messageCount := COUNT(*)
+                       SET r.averageMessageLength := AVG(message.length)
+                       SET r.sumMessageLength := SUM(message.legnth)
+                       SET r.percentageOfMessages := COUNT(*) / (
+                                                        SELECT COUNT(*) AS totalMessageCount
+                                                         MATCH (message:Message)
+                                                         WHERE message.creationDate <= ?
+                                                     )
+                 MATCH (message:Message)
+                 WHERE message.creationDate <= ?
+           )
+  ORDER BY r.messageYear DESC
+         , r.isComment
+         , r.lengthCategory
+
+]]
+
+/*
+  Given a date, find all Messages created before that date. Group them by a 3-level grouping:
+  1. by year of creation
+  2. for each year, group into Message types: is Comment or not
+  3. for each year-type group, split into four groups based on length of their content
+      • 0 : 0 <= length < 40 (short)
+      • 1 : 40 <= length < 80 (one liner)
+      • 2 : 80 <= length < 160 (tweet)
+      • 3 : 160 <= length (long)
+*/
+test Query 1 (with tabular GROUP BY) [[
+
+    SELECT messageYear
+         , isComment
+         , lengthCategory
+         , COUNT(*) AS messageCount
+         , AVG(message.length) AS averageMessageLength
+         , SUM(message.legnth) AS sumMessageLength
+         , COUNT(*) / (
+                         SELECT COUNT(*) AS totalMessageCount
+                          MATCH (message:Message)
+                          WHERE message.creationDate <= ?
+                      ) AS percentageOfMessages
+     MATCH (message:Message)
+     WHERE message.creationDate <= ?
+  GROUP BY message.creationDate AS messageYear
+         , (message:Comment) AS isComment
+         , CASE WHEN message.length < 40 THEN 0
+                WHEN message.length < 80 THEN 1
+                WHEN message.length < 160 THEN 2
+                ELSE 3
+            END AS lengthCategory
+ORDER BY messageYear DESC
+       , isComment
+       , lengthCategory
+
+]]
+
+/*
+  Select all Messages created between date1 - date2 (inclusive) by Persons located in country1 or
+  country2 . Select the creator Persons and the Tags of these Messages. Split these Persons, Tags
+  and Messages into a 5-level grouping:
+    1. name of country of Person,
+    2. month the Message was created,
+    3. gender of Person,
+    4. age group of Person, defined as years between person’s birthday and end of simulation
+       (2013-01-01), divided by 5, rounded down,
+    5. name of tag attached to Message.
+       Consider only those groups where number of Messages is greater than 100.
+*/
+test Query 2 [[
+
+    SELECT countryName, messageMonth, person.gender, ageGroup, tag.name, COUNT(*) AS messageCount
+     MATCH (person:Person) -[:isLocatedIn]-> (:City) -[:isPartOf]-> (country:Country)
+         , (person) <-[:hasCreator]-(message:Message)-[:hasTag]->(tag:Tag)
+     WHERE message.creationDate >= ?
+       AND message.creationDate <= ?
+       AND (country.name = ? OR country.name = ?)
+  GROUP BY person.country AS countryName
+         , month(message.creationDate) AS messageMonth
+         , person.gender AS gender
+         , floor((2013 - year(person.birthday)) / 5.0) AS ageGroup
+         , tag.name AS tagName
+    HAVING COUNT(*) > 100
+
+]]
+
+/*
+  Find the Tags that were used in Messages during the given month of the given year and the Tags
+  that were used during the next month.
+  For both months, compute the count of Messages that used each of the Tags.
+*/
+test Query 3 [[
+
+    SELECT tag.name
+         , (
+              SELECT COUNT(*)
+               MATCH (tag)
+               WHERE month(tag.creationDate) = ?
+           ) AS countMonth1
+         , (
+              SELECT COUNT(*)
+               MATCH (tag)
+               WHERE month(tag.creationDate) = ? + 1
+           ) AS countMonth2
+         , abs(countMonth1-countMonth2) AS diff
+     MATCH (tag:Tag)
+     WHERE month(tag.creationDate) = ? OR month(tag.creationDate = ? + 1)
+       AND year(tag.creationDate) = ?
+  ORDER BY diff DESC
+         , tag.name ASC
+     LIMIT 100
+
+]]
+
+/*
+  Given a TagClass and a Country, find all the Forums created in the given Country, containing at
+  least one Post with Tags belonging directly to the given TagClass.
+  The location of a Forum is identified by the location of the Forum’s moderator.
+*/
+test Query 4 [[
+
+    SELECT forum.id
+         , forum.title
+         , forum.creationDate
+         , person.id
+         , COUNT(DISTINCT post) AS postCount
+     MATCH (country:Country) <-[:isPartOf]- (:City) <-[:isLocatedIn]- (person:Person)<-[:hasModerator]-(forum:Forum)
+         , (forum) -[:containerOf]-> (post:Post) -[:hasTag]-> (:Tag) -[:hasType]-> (tg:TagClass)
+     WHERE country.name = ?
+       AND tg.name = ?
+  ORDER BY postCount DESC
+         , forum.id ASC
+     LIMIT 20
+
+]]
+
+/*
+  Find the most popular Forums for a given Country, where the popularity of a Forum is measured
+  by the number of members that Forum has from the given Country.
+  For each member of the 100 most popular Forums, count the number of Posts they made in any
+  of those (most popular) Forums.
+*/
+//test Query 5 [[
+// TODO
+//]]
+
+/*
+  Get Persons who have created a Message (Post or Comment) with a given Tag.
+  Each Person has a score, computed as follows:
+    • Count of Messages with the given Tag ( messageCount ).
+    • Count of Likes ( likeCount ) and Comments ( replyCount ) in reply of their Messages with
+      the given Tag (direct relation not transitive).
+  The score is calculated as a sum with the following weights:
+    • Messages ( messageCount ) are multiplied by 1,
+    • Comments to Messages ( replyCount ) are multiplied by 2,
+    • Likes ( likeCount ) are multiplied by 10.
+*/
+test Query 6 [[
+
+    SELECT person.id
+         , (
+              SELECT COUNT(r)
+               MATCH (message)<-[r:replyOf]-(comment:Comment)
+           ) AS replyCount
+         , (
+              SELECT COUNT(l)
+               MATCH (:Person)-[l:likes]->(message)
+           ) AS likeCount
+         , COUNT(*) AS messageCount
+         , 1*messageCount + 2*replyCount + 10*likeCount AS score
+     MATCH (tag:Tag) <-[:hasTag]- (message:Message) -[:hasCreator]-> (person:Person)
+     WHERE tag.name = ?
+  GROUP BY person, tag
+  ORDER BY score DESC
+         , person.id ASC
+     LIMIT 100
+
+]]
+
+/*
+  Given a Tag, find all Persons that ever created a Message with the given Tag. For each of these
+  Persons compute their “authority score” as follows:
+    • The “authority score” is the sum of “popularity scores” of the Persons that liked any of
+      that Person’s Messages with the given Tag.
+    • A Person’s “popularity score” is defined as the total number of likes on all of their Mes-
+      sages.
+*/
+//test Query 7 [[
+//
+//]]
+//
+//test Query 8 [[
+//
+//]]
+//
+//test Query 9 [[
+//
+//]]
+//
+//test Query 10 [[
+//
+//]]
+//
+//test Query 11 [[
+//
+//]]
+//
+//test Query 12 [[
+//
+//]]
+//
+//test Query 13 [[
+//
+//]]
+//
+//test Query 14 [[
+//
+//]]
+//
+//test Query 15 [[
+//
+//]]
+//
+//test Query 16 [[
+//
+//]]
+//
+//test Query 17 [[
+//
+//]]
+//
+//test Query 18 [[
+//
+//]]
+
+/*
   For all the Persons born after a certain date , find all the strangers they interacted with, where
   strangers are Persons that do not know each other. There is no restriction on the date that strangers
   were born.
@@ -43,6 +312,26 @@ ORDER BY interactionCount DESC,
    LIMIT 100
 
 ]]
+
+//test Query 20 [[
+//
+//]]
+//
+//test Query 21 [[
+//
+//]]
+//
+//test Query 22 [[
+//
+//]]
+//
+//test Query 23 [[
+//
+//]]
+//
+//test Query 24 [[
+//
+//]]
 
 /*
   Given two Persons, find a single weighted shortest paths between these two Persons, in the sub-
