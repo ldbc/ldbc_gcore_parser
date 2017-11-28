@@ -169,14 +169,12 @@ test Query 7 [[
                  END AS content
      MATCH (person) <-[:hasCreator]- (message:Post|Comment) <-[like:likes]- (liker)
      WHERE liker.id = (
-                           SELECT MIN(liker.id) AS smallestLikerId
-                            MATCH (person) <-[:hasCreator]- (:Post|Comment) <-[:likes]- (liker)
-                         GROUP BY person, liker
+                         SELECT MIN(liker.id) AS smallestLikerId
+                          MATCH (person) <-[:hasCreator]- (:Post|Comment) <-[:likes]- (liker)
                       )
        AND liked.creationDate = (
-                                    SELECT person, liker, MAX(like.creationDate) AS mostRecentLikeCreationDate
-                                     MATCH (person) <-[:hasCreator]- (:Post|Comment) <-[:likes]- (liker)
-                                  GROUP BY person, liker
+                                  SELECT MAX(like.creationDate) AS mostRecentLikeCreationDate
+                                   MATCH (person) <-[:hasCreator]- (:Post|Comment) <-[:likes]- (liker)
                                 )
        AND person.id = ?
   ORDER BY like.creationDate DESC, liker ASC
