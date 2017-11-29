@@ -17,36 +17,38 @@ context-free start-symbols
 
 context-free syntax
 
-  Start = FullQuery
+  Start = Query
 
-  FullQuery.Simple = BasicQuery
-  FullQuery.WithSetOperation = <
-    <BasicQuery>
-    <SetOperation>
-    <FullQuery>
+  Query = GraphQuery
+  Query = TabularGraphQuery
+
+  GraphQuery.BasicQuery = <
+    <ConstructClause>
+    <PathClause?>
+    <MatchWhereClause+>
   >
 
-  SetOperation.Union = <UNION> {case-insensitive}
-  SetOperation.UnionAll = <UNION ALL> {case-insensitive}
-  SetOperation.Minus = <MINUS> {case-insensitive}
-  SetOperation.Intersect = <INTERSECT> {case-insensitive}
+  GraphQuery.Union     = <<GraphOrGraphQuery> UNION <GraphOrGraphQuery>> {case-insensitive}
+  GraphQuery.Minus     = <<GraphOrGraphQuery> MINUS <GraphOrGraphQuery>> {case-insensitive}
+  GraphQuery.Intersect = <<GraphOrGraphQuery> INTERSECT <GraphOrGraphQuery>> {case-insensitive}
 
-  BasicQuery.BasicQuery = <
-    <ProjectClause>
+  GraphOrGraphQuery       = GraphQuery
+  GraphOrGraphQuery.Graph = GraphName
+
+  TabularGraphQuery.TabularGraphQuery = <
+    <SelectClause>
     <PathClause?>
-    <MatchClause>
-    <WhereClause?>
+    <MatchWhereClause+>
     <GroupByClause?>
     <HavingClause?>
     <OrderByClause?>
     <LimitOffsetClauses?>
   >
 
-  ProjectClause.Construct = <CONSTRUCT <ConstructPattern>> {case-insensitive}
-  ProjectClause.PathProject = <PATH PROJECT <{IDENTIFIER ", "}+>> {case-insensitive}
-  ProjectClause.Select = <SELECT <{ExpAsVar ", "}+>> {case-insensitive}
+  ConstructClause.Construct = <CONSTRUCT <ConstructPattern>> {case-insensitive}
+  SelectClause.Select = <SELECT <{ExpAsVar ", "}+>> {case-insensitive}
   PathClause.Path = <<{PathMacroDeclaration " \n"}+>>
-  MatchClause.Match = <MATCH <MatchPatternWithFilters><OptionalMatchClause*>> {case-insensitive}
+  MatchWhereClause.Match = <MATCH <MatchPatternWithFilters><OptionalMatchClause*>> {case-insensitive}
   OptionalMatchClause.OptionalMatchClause = <OPTIONAL <MatchPatternWithFilters>> {case-insensitive}
 
   MatchPatternWithFilters.MatchPatternWithFilters = <
@@ -57,7 +59,7 @@ context-free syntax
 
   WhereClause.Where = <WHERE <Exp>> {case-insensitive}
 
-  Location.Location = < ON <Graph>> {case-insensitive}
+  Location.Location = < ON <GraphOrSubQuery>> {case-insensitive}
 
-  Graph = GraphName
-  Graph = Subquery
+  GraphOrSubQuery          = GraphName
+  GraphOrSubQuery.SubQuery = <( <GraphQuery> )>

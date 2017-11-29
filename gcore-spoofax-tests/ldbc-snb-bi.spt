@@ -223,18 +223,85 @@ test Query 6 [[
     • A Person’s “popularity score” is defined as the total number of likes on all of their Mes-
       sages.
 */
-//test Query 7 [[
-//
-//]]
-//
-//test Query 8 [[
-//
-//]]
-//
-//test Query 9 [[
-//
-//]]
-//
+test Query 7 [[
+
+    SELECT person1.id
+         , SUM(person2.popularityScore) AS authorityScore
+     MATCH (person1) <-[:hasCreator]- (message:Message) -[:hasTag]-> (tag)
+         , (message)<-[:likes]-(person2:Person)
+        ON (
+              CONSTRUCT (p1) SET p1.popularityScore := COUNT(*)
+                  MATCH (p1:Person) <-[:hasCreator]- (:Message) <-[:likes]- (p2:Person)
+                  UNION snb_graph
+           )
+     WHERE tag.name = ?
+  GROUP BY person1
+  ORDER BY authorityScore DESC
+         , person1.id
+     LIMIT 100
+
+]]
+
+/*
+  Find all Messages that have a given Tag. Find the related Tags attached to replies of these Mes-
+  sages (direct relation not transitive), but only of those replies that do not have the given Tag.
+  Group the Tags by name, and get the count of replies in each group.
+*/
+test Query 8 [[
+
+    SELECT relatedTag.name
+         , COUNT(DISTINCT comment) AS count
+     MATCH (m:Message) -[:hasTag]-> (tag:Tag)
+         , (m) -[:replyOf]-> (comment:Comment) -[:hasTag]-> (relatedTag:Tag)
+     WHERE NOT EXISTS (
+                        SELECT tag
+                         MATCH (comment) -[:hasTag]-> (tag)
+                      )
+  ORDER BY count
+         , relatedTag.name
+     LIMIT 100
+
+]]
+
+/*
+  Given two TagClasses ( tagClass1 and tagClass2 ), find Forums that contain at least one Post
+  with a Tag from tagClass1 and at least one Post with a Tag from tagClass2 (direct children not
+  transitive) – this may be the same Post.
+  Consider the Forums with a number of members greater than a given threshold . For every such
+  Forum, count the number of Posts that have a Tag from TagClass1 ( count1 ), and the number of
+  Posts that have a Tag from TagClass2 ( count2 ).
+*/
+test Query 9 [[
+
+    SELECT forum.id
+         , forum.numPostsTagClass1 AS count1
+         , forum.numPostsTagClass2 AS count2
+     MATCH (forum:Forum)
+        ON (
+             CONSTRUCT (forum)
+               SET forum.numPostsTagClass1 := (
+                 SELECT COUNT(post)
+                  MATCH (forum) -[:containerOf]-> (post:Post) -[:hasTag]-> (:Tag) -[:hasType]-> (tc1:TagClass)
+                  WHERE tc1.name = ?
+               )
+               SET forum.numPostsTagClass2 := (
+                 SELECT COUNT(post)
+                  MATCH (forum) -[:containerOf]-> (post:Post) -[:hasTag]-> (:Tag) -[:hasType]-> (tc2:TagClass)
+                  WHERE tc2.name = ?
+               )
+               SET forum.numMembers := (
+                 SELECT COUNT(member)
+                  MATCH (forum) -[:hasMember]-> (member:Person)
+               )
+             MATCH (forum:Forum)
+  )
+     WHERE forum.numMembers > 100
+  ORDER BY abs(count2-count1) DESC
+         , forum.id
+     LIMIT 100
+
+]]
+
 //test Query 10 [[
 //
 //]]
