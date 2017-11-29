@@ -8,6 +8,10 @@ imports
 
 context-free syntax
 
+  GroupByClause.GroupByClause = <GROUP BY <{ExpAsVar ", "}+>> {case-insensitive}
+
+  HavingClause.HavingClause = <HAVING <{Exp ", "}+>> {case-insensitive}
+
   OrderByClause.OrderByClause = <order by <{OrderElem ", "}+>> {case-insensitive}
   OrderElem = <<Exp>>
   OrderElem.Asc = <<Exp> asc> {case-insensitive}

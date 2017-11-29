@@ -12,9 +12,9 @@ context-free syntax
           <{SetClause " \n"}*>
           <{RemoveClause " \n"}*>>
 
-	SetClause.SetClause = <SET <PropRef>:=<Exp>> {case-insensitive}
-	RemoveClause.Property = <REMOVE <PropRef>> {case-insensitive}
-	RemoveClause.Labels = <REMOVE <VarRef><LabelAssignments>> {case-insensitive}
+  SetClause.SetClause = <SET <PropRef>:=<Exp>> {case-insensitive}
+  RemoveClause.Property = <REMOVE <PropRef>> {case-insensitive}
+  RemoveClause.Labels = <REMOVE <VarRef><LabelAssignments>> {case-insensitive}
 
   BasicConstructPattern.BasicConstructPattern = <<VertexConstructPattern><{EdgeVertexConstructPattern ""}*><ConstructCondition?>>
   ConstructCondition.ConstructCondition = < WHEN <Exp>> {case-insensitive}
@@ -26,8 +26,8 @@ context-free syntax
   ConnectionConstructPattern.InConn = [<-[EdgeOrPathContentConstructPattern?]-]
   ConnectionConstructPattern.InOutEdge = [<-[EdgeContentConstructPattern?]->]
   ConnectionConstructPattern.OutEdge = [->]
-	ConnectionConstructPattern.InEdge = [<-]
-	ConnectionConstructPattern.InOutEdge = [<->]
+  ConnectionConstructPattern.InEdge = [<-]
+  ConnectionConstructPattern.InOutEdge = [<->]
   
   EdgeContentConstructPattern.Edge = <[<VarRefDef?><CopyPattern?><GroupDeclaration?><ObjectConstructPattern>]>
   EdgeOrPathContentConstructPattern.Edge = EdgeContentConstructPattern
@@ -40,7 +40,8 @@ context-free syntax
   CopyPattern.CopyPattern = <=<VarRef>>
   
   GroupDeclaration.GroupDeclaration = < GROUP <{Exp ", "}+> > {case-insensitive}
-  
+
+
   LabelAssignments.Labels = <<{LabelAssignment ""}+>>
   LabelAssignment.Label = <:<Label>>
 

@@ -1,0 +1,439 @@
+module ldbc-snb-bi // for query specifications, see https://github.com/ldbc/ldbc_snb_docs
+
+language gcore-spoofax
+
+/*
+  Given a date, find all Messages created before that date. Group them by a 3-level grouping:
+  1. by year of creation
+  2. for each year, group into Message types: is Comment or not
+  3. for each year-type group, split into four groups based on length of their content
+      • 0 : 0 <= length < 40 (short)
+      • 1 : 40 <= length < 80 (one liner)
+      • 2 : 80 <= length < 160 (tweet)
+      • 3 : 160 <= length (long)
+*/
+test Query 1 (without tabular GROUP BY) [[
+
+    SELECT r.messageYear AS messageYear
+         , r.isComment AS isComment
+         , r.lengthCategory AS lengthCategory
+         , r.messageCount AS messageCount
+         , r.averageMessageLength AS averageMessageLength
+         , r.sumMessageLength AS sumMessageLength
+         , r.percentageOfMessages AS percentageOfMessages
+     MATCH (r)
+        ON (
+             CONSTRUCT (r GROUP message.creationDate
+                              , (message:Comment)
+                              , CASE WHEN message.length < 40 THEN 0
+                                     WHEN message.length < 80 THEN 1
+                                     WHEN message.length < 160 THEN 2
+                                     ELSE 3
+                                 END
+                         :Result)
+                       SET r.messageYear := message.creationDate
+                       SET r.isComment := (message:Comment)
+                       SET r.lengthCategory := CASE WHEN message.length < 40 THEN 0
+                                                    WHEN message.length < 80 THEN 1
+                                                    WHEN message.length < 160 THEN 2
+                                                    ELSE 3
+                                                     END
+                       SET r.messageCount := COUNT(*)
+                       SET r.averageMessageLength := AVG(message.length)
+                       SET r.sumMessageLength := SUM(message.legnth)
+                       SET r.percentageOfMessages := COUNT(*) / (
+                                                        SELECT COUNT(*) AS totalMessageCount
+                                                         MATCH (message:Message)
+                                                         WHERE message.creationDate <= ?
+                                                     )
+                 MATCH (message:Message)
+                 WHERE message.creationDate <= ?
+           )
+  ORDER BY r.messageYear DESC
+         , r.isComment
+         , r.lengthCategory
+
+]]
+
+/*
+  Given a date, find all Messages created before that date. Group them by a 3-level grouping:
+  1. by year of creation
+  2. for each year, group into Message types: is Comment or not
+  3. for each year-type group, split into four groups based on length of their content
+      • 0 : 0 <= length < 40 (short)
+      • 1 : 40 <= length < 80 (one liner)
+      • 2 : 80 <= length < 160 (tweet)
+      • 3 : 160 <= length (long)
+*/
+test Query 1 (with tabular GROUP BY) [[
+
+    SELECT messageYear
+         , isComment
+         , lengthCategory
+         , COUNT(*) AS messageCount
+         , AVG(message.length) AS averageMessageLength
+         , SUM(message.legnth) AS sumMessageLength
+         , COUNT(*) / (
+                         SELECT COUNT(*) AS totalMessageCount
+                          MATCH (message:Message)
+                          WHERE message.creationDate <= ?
+                      ) AS percentageOfMessages
+     MATCH (message:Message)
+     WHERE message.creationDate <= ?
+  GROUP BY message.creationDate AS messageYear
+         , (message:Comment) AS isComment
+         , CASE WHEN message.length < 40 THEN 0
+                WHEN message.length < 80 THEN 1
+                WHEN message.length < 160 THEN 2
+                ELSE 3
+            END AS lengthCategory
+ORDER BY messageYear DESC
+       , isComment
+       , lengthCategory
+
+]]
+
+/*
+  Select all Messages created between date1 - date2 (inclusive) by Persons located in country1 or
+  country2 . Select the creator Persons and the Tags of these Messages. Split these Persons, Tags
+  and Messages into a 5-level grouping:
+    1. name of country of Person,
+    2. month the Message was created,
+    3. gender of Person,
+    4. age group of Person, defined as years between person’s birthday and end of simulation
+       (2013-01-01), divided by 5, rounded down,
+    5. name of tag attached to Message.
+       Consider only those groups where number of Messages is greater than 100.
+*/
+test Query 2 [[
+
+    SELECT countryName, messageMonth, person.gender, ageGroup, tag.name, COUNT(*) AS messageCount
+     MATCH (person:Person) -[:isLocatedIn]-> (:City) -[:isPartOf]-> (country:Country)
+         , (person) <-[:hasCreator]-(message:Message)-[:hasTag]->(tag:Tag)
+     WHERE message.creationDate >= ?
+       AND message.creationDate <= ?
+       AND (country.name = ? OR country.name = ?)
+  GROUP BY person.country AS countryName
+         , month(message.creationDate) AS messageMonth
+         , person.gender AS gender
+         , floor((2013 - year(person.birthday)) / 5.0) AS ageGroup
+         , tag.name AS tagName
+    HAVING COUNT(*) > 100
+
+]]
+
+/*
+  Find the Tags that were used in Messages during the given month of the given year and the Tags
+  that were used during the next month.
+  For both months, compute the count of Messages that used each of the Tags.
+*/
+test Query 3 [[
+
+    SELECT tag.name
+         , (
+              SELECT COUNT(*)
+               MATCH (tag)
+               WHERE month(tag.creationDate) = ?
+           ) AS countMonth1
+         , (
+              SELECT COUNT(*)
+               MATCH (tag)
+               WHERE month(tag.creationDate) = ? + 1
+           ) AS countMonth2
+         , abs(countMonth1-countMonth2) AS diff
+     MATCH (tag:Tag)
+     WHERE month(tag.creationDate) = ? OR month(tag.creationDate = ? + 1)
+       AND year(tag.creationDate) = ?
+  ORDER BY diff DESC
+         , tag.name ASC
+     LIMIT 100
+
+]]
+
+/*
+  Given a TagClass and a Country, find all the Forums created in the given Country, containing at
+  least one Post with Tags belonging directly to the given TagClass.
+  The location of a Forum is identified by the location of the Forum’s moderator.
+*/
+test Query 4 [[
+
+    SELECT forum.id
+         , forum.title
+         , forum.creationDate
+         , person.id
+         , COUNT(DISTINCT post) AS postCount
+     MATCH (country:Country) <-[:isPartOf]- (:City) <-[:isLocatedIn]- (person:Person)<-[:hasModerator]-(forum:Forum)
+         , (forum) -[:containerOf]-> (post:Post) -[:hasTag]-> (:Tag) -[:hasType]-> (tg:TagClass)
+     WHERE country.name = ?
+       AND tg.name = ?
+  ORDER BY postCount DESC
+         , forum.id ASC
+     LIMIT 20
+
+]]
+
+/*
+  Find the most popular Forums for a given Country, where the popularity of a Forum is measured
+  by the number of members that Forum has from the given Country.
+  For each member of the 100 most popular Forums, count the number of Posts they made in any
+  of those (most popular) Forums.
+*/
+//test Query 5 [[
+// TODO
+//]]
+
+/*
+  Get Persons who have created a Message (Post or Comment) with a given Tag.
+  Each Person has a score, computed as follows:
+    • Count of Messages with the given Tag ( messageCount ).
+    • Count of Likes ( likeCount ) and Comments ( replyCount ) in reply of their Messages with
+      the given Tag (direct relation not transitive).
+  The score is calculated as a sum with the following weights:
+    • Messages ( messageCount ) are multiplied by 1,
+    • Comments to Messages ( replyCount ) are multiplied by 2,
+    • Likes ( likeCount ) are multiplied by 10.
+*/
+test Query 6 [[
+
+    SELECT person.id
+         , (
+              SELECT COUNT(r)
+               MATCH (message)<-[r:replyOf]-(comment:Comment)
+           ) AS replyCount
+         , (
+              SELECT COUNT(l)
+               MATCH (:Person)-[l:likes]->(message)
+           ) AS likeCount
+         , COUNT(*) AS messageCount
+         , 1*messageCount + 2*replyCount + 10*likeCount AS score
+     MATCH (tag:Tag) <-[:hasTag]- (message:Message) -[:hasCreator]-> (person:Person)
+     WHERE tag.name = ?
+  GROUP BY person, tag
+  ORDER BY score DESC
+         , person.id ASC
+     LIMIT 100
+
+]]
+
+/*
+  Given a Tag, find all Persons that ever created a Message with the given Tag. For each of these
+  Persons compute their “authority score” as follows:
+    • The “authority score” is the sum of “popularity scores” of the Persons that liked any of
+      that Person’s Messages with the given Tag.
+    • A Person’s “popularity score” is defined as the total number of likes on all of their Mes-
+      sages.
+*/
+test Query 7 [[
+
+    SELECT person1.id
+         , SUM(person2.popularityScore) AS authorityScore
+     MATCH (person1) <-[:hasCreator]- (message:Message) -[:hasTag]-> (tag)
+         , (message)<-[:likes]-(person2:Person)
+        ON (
+              CONSTRUCT (p1) SET p1.popularityScore := COUNT(*)
+                  MATCH (p1:Person) <-[:hasCreator]- (:Message) <-[:likes]- (p2:Person)
+                  UNION snb_graph
+           )
+     WHERE tag.name = ?
+  GROUP BY person1
+  ORDER BY authorityScore DESC
+         , person1.id
+     LIMIT 100
+
+]]
+
+/*
+  Find all Messages that have a given Tag. Find the related Tags attached to replies of these Mes-
+  sages (direct relation not transitive), but only of those replies that do not have the given Tag.
+  Group the Tags by name, and get the count of replies in each group.
+*/
+test Query 8 [[
+
+    SELECT relatedTag.name
+         , COUNT(DISTINCT comment) AS count
+     MATCH (m:Message) -[:hasTag]-> (tag:Tag)
+         , (m) -[:replyOf]-> (comment:Comment) -[:hasTag]-> (relatedTag:Tag)
+     WHERE NOT EXISTS (
+                        SELECT tag
+                         MATCH (comment) -[:hasTag]-> (tag)
+                      )
+  ORDER BY count
+         , relatedTag.name
+     LIMIT 100
+
+]]
+
+/*
+  Given two TagClasses ( tagClass1 and tagClass2 ), find Forums that contain at least one Post
+  with a Tag from tagClass1 and at least one Post with a Tag from tagClass2 (direct children not
+  transitive) – this may be the same Post.
+  Consider the Forums with a number of members greater than a given threshold . For every such
+  Forum, count the number of Posts that have a Tag from TagClass1 ( count1 ), and the number of
+  Posts that have a Tag from TagClass2 ( count2 ).
+*/
+test Query 9 [[
+
+    SELECT forum.id
+         , forum.numPostsTagClass1 AS count1
+         , forum.numPostsTagClass2 AS count2
+     MATCH (forum:Forum)
+        ON (
+             CONSTRUCT (forum)
+               SET forum.numPostsTagClass1 := (
+                 SELECT COUNT(post)
+                  MATCH (forum) -[:containerOf]-> (post:Post) -[:hasTag]-> (:Tag) -[:hasType]-> (tc1:TagClass)
+                  WHERE tc1.name = ?
+               )
+               SET forum.numPostsTagClass2 := (
+                 SELECT COUNT(post)
+                  MATCH (forum) -[:containerOf]-> (post:Post) -[:hasTag]-> (:Tag) -[:hasType]-> (tc2:TagClass)
+                  WHERE tc2.name = ?
+               )
+               SET forum.numMembers := (
+                 SELECT COUNT(member)
+                  MATCH (forum) -[:hasMember]-> (member:Person)
+               )
+             MATCH (forum:Forum)
+  )
+     WHERE forum.numMembers > 100
+  ORDER BY abs(count2-count1) DESC
+         , forum.id
+     LIMIT 100
+
+]]
+
+//test Query 10 [[
+//
+//]]
+//
+//test Query 11 [[
+//
+//]]
+//
+//test Query 12 [[
+//
+//]]
+//
+//test Query 13 [[
+//
+//]]
+//
+//test Query 14 [[
+//
+//]]
+//
+//test Query 15 [[
+//
+//]]
+//
+//test Query 16 [[
+//
+//]]
+//
+//test Query 17 [[
+//
+//]]
+//
+//test Query 18 [[
+//
+//]]
+
+/*
+  For all the Persons born after a certain date , find all the strangers they interacted with, where
+  strangers are Persons that do not know each other. There is no restriction on the date that strangers
+  were born.
+  Consider only strangers that are members of Forums tagged with a Tag of tagClass1 (direct
+  children not transitive) AND members of Forums tagged with a Tag of tagClass2 (direct children
+  not transitive). The tags may be attached to the same Forum or they may be attached to different
+  Forums.
+  Interaction is defined as follows: if Person A replies to a Message (Post or Comment) by another
+  Person B, there is an “interacted with” relationship from A to B. Note that the “interacted with”
+  relationship is directed.
+  For each Person, count the number of strangers they interacted with and total number of times
+  they interacted with them.
+*/
+test Query 19 [[
+
+  SELECT person.id
+       , COUNT(DISTINCT stranger) AS strangersCount
+       , COUNT(comment1) + COUNT(comment2) AS interactionCount
+   MATCH (person:Person)
+OPTIONAL (person)<-[:hasCreator]-(comment1:Comment)-[:replyOf]->(:Message)-[:hasCreator]->(stranger)
+OPTIONAL (stranger)<-[:hasCreator]-(comment2:Comment)-[:replyOf]->(:Message)-[:hasCreator]->(person)
+   WHERE person.birthday > ?
+     AND person <> stranger
+     AND NOT EXISTS ( SELECT e MATCH (person)-[e:knows]-(stranger) )
+     AND stranger IS NULL OR ( EXISTS ( SELECT tag
+                                         MATCH (stranger:Person) <-[:hasMember]- (forum:Forum)
+                                             , (forum) -[:hasTag]-> (:Tag) -[:hasType]-> (tagClass:TagClass)
+                                         WHERE tagClass.name = ?
+                                      ) AND
+                               EXISTS ( SELECT tag
+                                        MATCH (stranger:Person) <-[:hasMember]- (forum:Forum)
+                                            , (forum) -[:hasTag]-> (:Tag) -[:hasType]-> (tagClass:TagClass)
+                                        WHERE tagClass.name = ?
+                                      )
+                             )
+ORDER BY interactionCount DESC,
+         person.id ASC
+   LIMIT 100
+
+]]
+
+//test Query 20 [[
+//
+//]]
+//
+//test Query 21 [[
+//
+//]]
+//
+//test Query 22 [[
+//
+//]]
+//
+//test Query 23 [[
+//
+//]]
+//
+//test Query 24 [[
+//
+//]]
+
+/*
+  Given two Persons, find a single weighted shortest paths between these two Persons, in the sub-
+  graph induced by the knows relationship.
+  The nodes in the path are Persons, and the weight of a  path is the sum of weights between
+  every pair of consecutive Person nodes in the path. The weight for a pair of Persons is
+  calculated based on their interactions:
+    • Every reply (by one of the Persons) to a Post (by the other Person) contributes 1.0.
+    • Every reply (by one of the Persons) to a Comment (by the other Person) contributes 0.5.
+  Only consider Messages that were created in a Forum that was created within the timeframe
+  [startDate, endDate] .
+  Return all the paths with shortest length, and their weights
+*/
+test Query 25 [[
+
+CONSTRUCT (p1) -/path/-> (p2)
+     PATH reply_to_post = (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Post) -[:has_creator]-> (personB)
+                           WHERE EXISTS ( SELECT forum
+                                          MATCH (message1) -[:hasContainer]-> (forum:Forum)
+                                              , (message2) -[:hasContainer]-> (forum)
+                                          WHERE ? <= forum.creationDate AND forum.creationDate <= ?
+                                       )
+     PATH reply_to_comment = (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Comment) -[:has_creator]-> (personB)
+                             WHERE EXISTS ( SELECT forum
+                                             MATCH (message1) -[:hasContainer]-> (forum:Forum)
+                                              , (message2) -[:hasContainer]-> (forum)
+                                             WHERE ? <= forum.creationDate AND forum.creationDate <= ?
+                                          )
+     PATH weighted_knows = (personA) -[:knows]-> (personB)
+                           COST 1.0 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_post>/-> (personB) )
+                              + 1.0 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_post>/-> (personA) )
+                              + 0.5 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_comment>/-> (personB) )
+                              + 0.5 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_comment>/-> (personA) )
+    MATCH (p1:Person) -/SHORTEST path <~weighted_knows*>/-> (p2:Person)
+    WHERE p1.id = ?
+      AND p2.id = ?
+
+]]
