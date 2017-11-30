@@ -8,9 +8,12 @@ imports
 
 context-free syntax
 
-  ConstructPattern.ConstructPattern = <<{BasicConstructPattern ",\n"}+>
+  ConstructPattern.ConstructPattern = <<{GraphOrBasicConstructPattern ",\n"}+>
           <{SetClause " \n"}*>
           <{RemoveClause " \n"}*>>
+
+  GraphOrBasicConstructPattern = GraphOrSubQuery
+  GraphOrBasicConstructPattern = BasicConstructPattern
 
   SetClause.SetClause = <SET <PropRef>:=<Exp>> {case-insensitive}
   RemoveClause.Property = <REMOVE <PropRef>> {case-insensitive}

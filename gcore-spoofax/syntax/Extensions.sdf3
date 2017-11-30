@@ -1,0 +1,39 @@
+module Extensions
+
+imports
+
+  Names
+  Literals
+  Expressions
+  gcore-spoofax
+
+context-free syntax
+
+  TabularGraphQuery.TabularGraphQuery = <
+    <PathClause?>
+    <SelectClause>
+    <MatchClause>
+    <GroupByClause?>
+    <HavingClause?>
+    <OrderByClause?>
+    <LimitOffsetClauses?>
+  >
+
+  GroupByClause.GroupByClause = <GROUP BY <{ExpAsVar ", "}+>> {case-insensitive}
+
+  HavingClause.HavingClause = <HAVING <{Exp ", "}+>> {case-insensitive}
+
+  OrderByClause.OrderByClause = <ORDER BY <{OrderElem ", "}+>> {case-insensitive}
+  OrderElem = <<Exp>>
+  OrderElem.Asc = <<Exp> ASC> {case-insensitive}
+  OrderElem.Desc = <<Exp> DESC> {case-insensitive}
+
+  LimitOffsetClauses.LimitOffsetClauses = <<LimitClause> <OffsetClause?>>
+  LimitOffsetClauses.OffsetLimitClauses = <<OffsetClause> <LimitClause?>>
+  LimitClause.LimitClause = <LIMIT <IntOrParameter>> {case-insensitive}
+  OffsetClause.OffsetClause = <OFFSET <IntOrParameter>> {case-insensitive}
+
+  IntOrParameter.Integer = UNSIGNED-INT
+  IntOrParameter.Parameter = Parameter
+
+  Exp.ScalarSubquery = <( <TabularGraphQuery> )>
