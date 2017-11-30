@@ -409,23 +409,23 @@ ORDER BY interactionCount DESC,
 */
 test Query 25 [[
 
-       PATH reply_to_post AS (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Post) -[:has_creator]-> (personB)
-                              WHERE EXISTS ( CONSTRUCT (forum)
-	                                             MATCH (message1) -[:hasContainer]-> (forum:Forum)
-	                                                 , (message2) -[:hasContainer]-> (forum)
-	                                             WHERE ? <= forum.creationDate AND forum.creationDate <= ?
+       PATH reply_to_post = (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Post) -[:has_creator]-> (personB)
+                             WHERE EXISTS ( CONSTRUCT (forum)
+	                                            MATCH (message1) -[:hasContainer]-> (forum:Forum)
+	                                                , (message2) -[:hasContainer]-> (forum)
+	                                            WHERE ? <= forum.creationDate AND forum.creationDate <= ?
                                           )
-       PATH reply_to_comment AS (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Comment) -[:has_creator]-> (personB)
-                                WHERE EXISTS ( CONSTRUCT (forum)
-	                                               MATCH (message1) -[:hasContainer]-> (forum:Forum)
-	                                                   , (message2) -[:hasContainer]-> (forum)
-	                                               WHERE ? <= forum.creationDate AND forum.creationDate <= ?
-                                             )
-       PATH weighted_knows AS (personA) -[:knows]-> (personB)
-                              COST 1.0 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_post>/-> (personB) )
-                                 + 1.0 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_post>/-> (personA) )
-                                 + 0.5 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_comment>/-> (personB) )
-                                 + 0.5 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_comment>/-> (personA) )
+       PATH reply_to_comment = (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Comment) -[:has_creator]-> (personB)
+                               WHERE EXISTS ( CONSTRUCT (forum)
+	                                              MATCH (message1) -[:hasContainer]-> (forum:Forum)
+	                                                  , (message2) -[:hasContainer]-> (forum)
+	                                              WHERE ? <= forum.creationDate AND forum.creationDate <= ?
+                                            )
+       PATH weighted_knows = (personA) -[:knows]-> (personB)
+                             COST 1.0 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_post>/-> (personB) )
+                                + 1.0 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_post>/-> (personA) )
+                                + 0.5 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_comment>/-> (personB) )
+                                + 0.5 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_comment>/-> (personA) )
   CONSTRUCT (p1) -/path/-> (p2)
       MATCH (p1:Person) -/SHORTEST path <~weighted_knows*>/-> (p2:Person)
       WHERE p1.id = ?

@@ -42,14 +42,20 @@ context-free syntax
   SelectClause.Select = <SELECT <{ExpAsVar ", "}+>> {case-insensitive}
   PathClause.Path = <<{PathMacroDeclaration "\n"}+>>
   MatchClause.Match = <
-    MATCH <{BasicGraphPatternLocation ",\n"}+>
-      <WhereClause?>
-      <{OptionalClause "\n"}*>
+    MATCH <FullGraphPatternCondition>
+      <OptionalClause?>
   > {case-insensitive}
 
-  OptionalClause.Optional = <
-    OPTIONAL <{BasicGraphPatternLocation ",\n"}+>
-      <WhereClause?>  
+  FullGraphPatternCondition.FullGraphPatternCondition = <
+    <FullGraphPattern>
+    <WhereClause?>
+  >
+
+  FullGraphPattern.FullGraphPattern = <<{BasicGraphPatternLocation ",\n"}+>>
+
+  OptionalClause.OptionalClause = <<{Optional "\n"}+>>
+  Optional.Optional = <
+    OPTIONAL <FullGraphPatternCondition>
   > {case-insensitive}
 
   BasicGraphPatternLocation.BasicGraphPatternLocation = <

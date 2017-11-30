@@ -8,8 +8,6 @@ imports
 
 context-free syntax
 
-  FullGraphPattern.FullGraphPattern = <<{BasicGraphPattern ","}+>>
-
   BasicGraphPattern.BasicGraphPattern = <<VertexMatchPattern><EdgeVertexMatchPattern*>>
   VertexMatchPattern.Vertex = <(<VarDef?><ObjectMatchPattern>)>
 
