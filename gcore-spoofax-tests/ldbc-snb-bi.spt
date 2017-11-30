@@ -12,7 +12,7 @@ language gcore-spoofax
       • 2 : 80 <= length < 160 (tweet)
       • 3 : 160 <= length (long)
 */
-test Query 1 (without tabular GROUP BY) [[
+test Query 1 (using subquery) [[
 
     SELECT r.messageYear AS messageYear
          , r.isComment AS isComment
@@ -65,7 +65,7 @@ test Query 1 (without tabular GROUP BY) [[
       • 2 : 80 <= length < 160 (tweet)
       • 3 : 160 <= length (long)
 */
-test Query 1 (with tabular GROUP BY) [[
+test Query 1 (using GROUP BY) [[
 
     SELECT messageYear
          , isComment
@@ -73,8 +73,7 @@ test Query 1 (with tabular GROUP BY) [[
          , COUNT(*) AS messageCount
          , AVG(message.length) AS averageMessageLength
          , SUM(message.legnth) AS sumMessageLength
-         , COUNT(*) / (
-                         SELECT COUNT(*) AS totalMessageCount
+         , COUNT(*) / ( SELECT COUNT(*) AS totalMessageCount
                           MATCH (message:Message)
                           WHERE message.creationDate <= ?
                       ) AS percentageOfMessages
@@ -87,9 +86,9 @@ test Query 1 (with tabular GROUP BY) [[
                 WHEN message.length < 160 THEN 2
                 ELSE 3
             END AS lengthCategory
-ORDER BY messageYear DESC
-       , isComment
-       , lengthCategory
+  ORDER BY messageYear DESC
+         , isComment
+         , lengthCategory
 
 ]]
 
@@ -130,13 +129,11 @@ test Query 2 [[
 test Query 3 [[
 
     SELECT tag.name
-         , (
-              SELECT COUNT(*)
+         , ( SELECT COUNT(*)
                MATCH (tag)
                WHERE month(tag.creationDate) = ?
            ) AS countMonth1
-         , (
-              SELECT COUNT(*)
+         , ( SELECT COUNT(*)
                MATCH (tag)
                WHERE month(tag.creationDate) = ? + 1
            ) AS countMonth2
@@ -196,12 +193,10 @@ test Query 4 [[
 test Query 6 [[
 
     SELECT person.id
-         , (
-              SELECT COUNT(r)
+         , ( SELECT COUNT(r)
                MATCH (message)<-[r:replyOf]-(comment:Comment)
            ) AS replyCount
-         , (
-              SELECT COUNT(l)
+         , ( SELECT COUNT(l)
                MATCH (:Person)-[l:likes]->(message)
            ) AS likeCount
          , COUNT(*) AS messageCount
@@ -254,8 +249,8 @@ test Query 8 [[
      MATCH (m:Message) -[:hasTag]-> (tag:Tag)
          , (m) -[:replyOf]-> (comment:Comment) -[:hasTag]-> (relatedTag:Tag)
      WHERE NOT EXISTS (
-                        SELECT tag
-                         MATCH (comment) -[:hasTag]-> (tag)
+                        CONSTRUCT (tag)
+                            MATCH (comment) -[:hasTag]-> (tag)
                       )
   ORDER BY count
          , relatedTag.name
@@ -294,7 +289,7 @@ test Query 9 [[
                   MATCH (forum) -[:hasMember]-> (member:Person)
                )
              MATCH (forum:Forum)
-  )
+           )
      WHERE forum.numMembers > 100
   ORDER BY abs(count2-count1) DESC
          , forum.id
@@ -362,13 +357,13 @@ OPTIONAL (person)<-[:hasCreator]-(comment1:Comment)-[:replyOf]->(:Message)-[:has
 OPTIONAL (stranger)<-[:hasCreator]-(comment2:Comment)-[:replyOf]->(:Message)-[:hasCreator]->(person)
    WHERE person.birthday > ?
      AND person <> stranger
-     AND NOT EXISTS ( SELECT e MATCH (person)-[e:knows]-(stranger) )
-     AND stranger IS NULL OR ( EXISTS ( SELECT tag
+     AND NOT EXISTS ( CONSTRUCT () MATCH (person)-[e:knows]-(stranger) )
+     AND stranger IS NULL OR ( EXISTS ( CONSTRUCT (tag)
                                          MATCH (stranger:Person) <-[:hasMember]- (forum:Forum)
                                              , (forum) -[:hasTag]-> (:Tag) -[:hasType]-> (tagClass:TagClass)
                                          WHERE tagClass.name = ?
                                       ) AND
-                               EXISTS ( SELECT tag
+                               EXISTS ( CONSTRUCT (tag)
                                         MATCH (stranger:Person) <-[:hasMember]- (forum:Forum)
                                             , (forum) -[:hasTag]-> (:Tag) -[:hasType]-> (tagClass:TagClass)
                                         WHERE tagClass.name = ?
@@ -414,26 +409,26 @@ ORDER BY interactionCount DESC,
 */
 test Query 25 [[
 
-CONSTRUCT (p1) -/path/-> (p2)
-     PATH reply_to_post = (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Post) -[:has_creator]-> (personB)
-                           WHERE EXISTS ( SELECT forum
-                                          MATCH (message1) -[:hasContainer]-> (forum:Forum)
-                                              , (message2) -[:hasContainer]-> (forum)
-                                          WHERE ? <= forum.creationDate AND forum.creationDate <= ?
-                                       )
-     PATH reply_to_comment = (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Comment) -[:has_creator]-> (personB)
-                             WHERE EXISTS ( SELECT forum
-                                             MATCH (message1) -[:hasContainer]-> (forum:Forum)
-                                              , (message2) -[:hasContainer]-> (forum)
-                                             WHERE ? <= forum.creationDate AND forum.creationDate <= ?
+       PATH reply_to_post AS (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Post) -[:has_creator]-> (personB)
+                              WHERE EXISTS ( CONSTRUCT (forum)
+	                                             MATCH (message1) -[:hasContainer]-> (forum:Forum)
+	                                                 , (message2) -[:hasContainer]-> (forum)
+	                                             WHERE ? <= forum.creationDate AND forum.creationDate <= ?
                                           )
-     PATH weighted_knows = (personA) -[:knows]-> (personB)
-                           COST 1.0 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_post>/-> (personB) )
-                              + 1.0 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_post>/-> (personA) )
-                              + 0.5 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_comment>/-> (personB) )
-                              + 0.5 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_comment>/-> (personA) )
-    MATCH (p1:Person) -/SHORTEST path <~weighted_knows*>/-> (p2:Person)
-    WHERE p1.id = ?
-      AND p2.id = ?
+       PATH reply_to_comment AS (personA) <-[:has_creator]- (message1:Comment) -[:reply_of]-> (message2:Comment) -[:has_creator]-> (personB)
+                                WHERE EXISTS ( CONSTRUCT (forum)
+	                                               MATCH (message1) -[:hasContainer]-> (forum:Forum)
+	                                                   , (message2) -[:hasContainer]-> (forum)
+	                                               WHERE ? <= forum.creationDate AND forum.creationDate <= ?
+                                             )
+       PATH weighted_knows AS (personA) -[:knows]-> (personB)
+                              COST 1.0 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_post>/-> (personB) )
+                                 + 1.0 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_post>/-> (personA) )
+                                 + 0.5 * ( SELECT COUNT(*) MATCH (personA) -/<~reply_to_comment>/-> (personB) )
+                                 + 0.5 * ( SELECT COUNT(*) MATCH (personB) -/<~reply_to_comment>/-> (personA) )
+  CONSTRUCT (p1) -/path/-> (p2)
+      MATCH (p1:Person) -/SHORTEST path <~weighted_knows*>/-> (p2:Person)
+      WHERE p1.id = ?
+        AND p2.id = ?
 
 ]]

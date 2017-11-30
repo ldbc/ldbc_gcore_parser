@@ -2,30 +2,33 @@ module gcore-spoofax
 
 imports
   
-   Layout
+  Layout
   Names
   Literals
   ConstructPattern
   PathMacro
-   MatchPattern
-   SolutionModifiers
+  MatchPattern
+  Extensions
   Expressions
 
 context-free start-symbols
-  
+
   Start
 
 context-free syntax
 
+  Start = GraphView
   Start = Query
+
+  GraphView.View = <GRAPH VIEW <GraphName> AS ( <GraphQuery> )> {case-insensitive}
 
   Query = GraphQuery
   Query = TabularGraphQuery
 
   GraphQuery.BasicQuery = <
-    <ConstructClause>
     <PathClause?>
-    <MatchWhereClause+>
+    <ConstructClause>
+    <MatchClause>
   >
 
   GraphQuery.Union     = <<GraphOrGraphQuery> UNION <GraphOrGraphQuery>> {case-insensitive}
@@ -35,31 +38,26 @@ context-free syntax
   GraphOrGraphQuery       = GraphQuery
   GraphOrGraphQuery.Graph = GraphName
 
-  TabularGraphQuery.TabularGraphQuery = <
-    <SelectClause>
-    <PathClause?>
-    <MatchWhereClause+>
-    <GroupByClause?>
-    <HavingClause?>
-    <OrderByClause?>
-    <LimitOffsetClauses?>
-  >
-
   ConstructClause.Construct = <CONSTRUCT <ConstructPattern>> {case-insensitive}
   SelectClause.Select = <SELECT <{ExpAsVar ", "}+>> {case-insensitive}
-  PathClause.Path = <<{PathMacroDeclaration " \n"}+>>
-  MatchWhereClause.Match = <MATCH <MatchPatternWithFilters><OptionalMatchClause*>> {case-insensitive}
-  OptionalMatchClause.OptionalMatchClause = <OPTIONAL <MatchPatternWithFilters>> {case-insensitive}
+  PathClause.Path = <<{PathMacroDeclaration "\n"}+>>
+  MatchClause.Match = <
+    MATCH <{BasicGraphPatternLocation ",\n"}+>
+    <WhereClause?>
+    <OptionalClause?>
+  > {case-insensitive}
 
-  MatchPatternWithFilters.MatchPatternWithFilters = <
+  OptionalClause.Optional = <<{OptionalMatch "\n"}+>>
+  OptionalMatch.OptionalMatch = <
+    OPTIONAL <BasicGraphPatternLocation>
+    <WhereClause?>  
+  > {case-insensitive}
+
+  BasicGraphPatternLocation.BasicGraphPatternLocation = <
     <FullMatchPattern>
     <Location?>
-    <WhereClause?>
   >
 
   WhereClause.Where = <WHERE <Exp>> {case-insensitive}
 
   Location.Location = < ON <GraphOrSubQuery>> {case-insensitive}
-
-  GraphOrSubQuery          = GraphName
-  GraphOrSubQuery.SubQuery = <( <GraphQuery> )>

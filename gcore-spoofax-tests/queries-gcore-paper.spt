@@ -1,0 +1,146 @@
+module queries-gcore-paper
+
+language gcore-spoofax
+
+test Query 1 [[
+
+  CONSTRUCT (n)
+    MATCH   (n:Person) 
+      ON    social_graph
+      WHERE n.employer = 'Google'
+
+]]
+
+test Query 2 [[
+
+CONSTRUCT (c)<-[:worksAt]-(n)
+  MATCH   (c:Company) ON company_graph,
+          (n:Person)  ON social_graph
+    WHERE c.name = n.employer
+UNION social_graph
+
+]]
+
+test Query 3 [[
+
+  CONSTRUCT (c)<-[:worksAt]-(n)
+    MATCH   (c:Company) ON company_graph,
+            (n:Person)  ON social_graph
+      WHERE c.name IN n.employer
+  UNION social_graph
+
+]]
+
+test Query 4 [[
+
+  CONSTRUCT (c)<-[:worksAt]-(n)
+    MATCH   (c:Company)             ON company_graph, 
+            (n:Person {employer:e}) ON social_graph
+      WHERE c.name = e
+  UNION social_graph
+
+]]
+
+test Query 5 [[
+
+  CONSTRUCT  social_graph, 
+      (x GROUP e :Company {name:=e})<-[y:worksAt]-(n)
+    MATCH   (n:Person {employer:e})
+
+]]
+
+test Query 6 [[
+
+  CONSTRUCT (n)-[y:worksAt]->(x:Company{name:=n.employer})
+    MATCH   (n:Person {employer:e})
+
+]]
+
+test Query 7 [[
+
+  CONSTRUCT (n)-/@p:localPeople{distance:=c}/->(m)
+    MATCH   (n)-/3 SHORTEST p<:knows*> COST c/->(m)
+      WHERE (n:Person) AND (m:Person)
+        AND n.firstName = 'John' AND n.lastName = 'Doe'
+        AND (n)-[:isLocatedIn]->()<-[:isLocatedIn]-(m)
+
+]]
+
+test Query 8 [[
+
+  CONSTRUCT (m)
+    MATCH   (n:Person)-/<:knows*>/->(m:Person)
+      WHERE n.firstName = 'John' AND n.lastName = 'Doe'
+        AND (n)-[:isLocatedIn]->()<-[:isLocatedIn]-(m)
+
+]]
+
+test Query 9 [[
+
+  CONSTRUCT (n)-/p/->(m)
+    MATCH   (n:Person)-/ALL p<:knows*>/->(m:Person)
+      WHERE n.firstName = 'John' AND n.lastName = 'Doe'
+        AND (n)-[:isLocatedIn]->()<-[:isLocatedIn]-(m)
+
+]]
+
+test Query 10 [[
+
+  CONSTRUCT (n)-/p/->(m)
+    MATCH   (n:Person)-/ALL p<:knows*>/->(m:Person)
+      WHERE n.firstName = 'John' AND n.lastName = 'Doe'
+        AND EXISTS (
+              CONSTRUCT () 
+              MATCH (n)-[:isLocatedIn]->()<-[:isLocatedIn]-(m)
+            )
+
+]]
+
+test Query 11 [[
+
+  GRAPH VIEW social_graph1 AS (
+    CONSTRUCT social_graph, 
+          (n)-[e]->(m) SET e.nr_messages := COUNT(*)
+      MATCH (n)-[e:knows]->(m)
+        WHERE (n:Person) AND (m:Person)
+        OPTIONAL (n)<-[c1]-(msg1:Post|Comment),
+                 (msg1)-[:reply_of]-(msg2),
+                 (msg2:Post|Comment)-[c2]->(m)
+          WHERE (c1:has_creator) AND (c2:has_creator) )
+
+]]
+
+test Query 12 [[
+
+  GRAPH VIEW social_graph2 AS (
+  PATH wKnows AS (x)-[e:knows]->(y)
+    WHERE NOT 'Google' IN y.employer
+    COST 1 / (1 + e.nr_messages)
+  CONSTRUCT social_graph1, (n)-/@p:toWagner/->(m)
+    MATCH   (n:Person)-/SHORTEST p<~wKnows*>/->(m:Person) 
+      ON    social_graph1
+      WHERE (m)-[:hasInterest]->(:tag {name:'Wagner'})
+        AND (n)-[:isLocatedIn]->()<-[:isLocatedIn]-(m) 
+        AND n.firstName = 'John' AND n.lastName = 'Doe')
+
+]]
+
+test Query 12 [[
+
+  CONSTRUCT (n)-[e:wagnerFriend {score:=COUNT(*)}]->(m) 
+            WHEN e.score > 0
+    MATCH   (n:Person)-/@p:toWagner/->(), (m:Person)
+      ON    social_graph2
+      WHERE n = nodes(p)[1]
+
+]]
+
+test Query 13 [[
+
+
+]]
+
+test Query 14 [[
+
+
+]]

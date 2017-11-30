@@ -8,7 +8,7 @@ imports
 	MatchPattern
   
 context-free syntax
-	PathMacroDeclaration.PathMacroDeclaration = <PATH <MarcoNameDef> = <BasicMatchPattern> 
+	PathMacroDeclaration.PathMacroDeclaration = <PATH <MarcoNameDef> AS <BasicMatchPattern> 
 	  <BranchPatterns?>
 	  <PathWhereClause?>
 	  <PathCostClause?>> {case-insensitive}

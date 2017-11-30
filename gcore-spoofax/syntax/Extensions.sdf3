@@ -1,12 +1,23 @@
-module SolutionModifiers
+module Extensions
 
 imports
-  
+
   Names
   Literals
   Expressions
+  gcore-spoofax
 
 context-free syntax
+
+  TabularGraphQuery.TabularGraphQuery = <
+    <PathClause?>
+    <SelectClause>
+    <MatchClause>
+    <GroupByClause?>
+    <HavingClause?>
+    <OrderByClause?>
+    <LimitOffsetClauses?>
+  >
 
   GroupByClause.GroupByClause = <GROUP BY <{ExpAsVar ", "}+>> {case-insensitive}
 
@@ -24,3 +35,5 @@ context-free syntax
 
   IntOrParameter.Integer = UNSIGNED-INT
   IntOrParameter.Parameter = Parameter
+
+  Exp.ScalarSubquery = <( <TabularGraphQuery> )>

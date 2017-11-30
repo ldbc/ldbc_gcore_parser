@@ -8,7 +8,7 @@ imports
 
 context-free syntax
 
-  FullMatchPattern.FullMatchPattern = {BasicMatchPattern ","}+
+  FullMatchPattern.FullMatchPattern = <<{BasicMatchPattern ","}+>>
 
   BasicMatchPattern.BasicMatchPattern = <<VertexMatchPattern><EdgeVertexMatchPattern*>>
   VertexMatchPattern.Vertex = <(<VarDef?><ObjectMatchPattern>)>
@@ -28,13 +28,13 @@ context-free syntax
   
   EdgeMatchPattern.EdgeMatchPattern = <[<VarDef?><ObjectMatchPattern>]>
   
-  PathMatchPattern.Virtual 		= </<PathQuantifier?><VarDef?><PathExpression?>/>
-  PathMatchPattern.Objectified	= </<PathQuantifier?><AT-SIGN><VarDef?><PathExpression?><ObjectMatchPattern>/>
+  PathMatchPattern.Virtual 		= </<PathQuantifier?><VarDef?><PathExpression?><CostVariableDef?>/>
+  PathMatchPattern.Objectified	= </<PathQuantifier?><AT-SIGN><VarDef?><PathExpression?><ObjectMatchPattern><CostVariableDef?>/>
   
   PathQuantifier.Shortest = <SHORTEST > {case-insensitive}
   PathQuantifier.XShortest = <<UNSIGNED-INT> SHORTEST > {case-insensitive}
   PathQuantifier.XDistinctShortest = <<UNSIGNED-INT> DISJUNCT SHORTEST > {case-insensitive}
-  PathQuantifier.AllPaths = <ALL PATHS > {case-insensitive}
+  PathQuantifier.AllPaths = <ALL  > {case-insensitive}
   
   PathExpression.PathExpression = <<LT><RegularPathExpression><GT>>
   RegularPathExpression = <(<RegularPathExpression>)> {bracket}
@@ -50,9 +50,13 @@ context-free syntax
 
   ObjectMatchPattern.ObjectMatchPattern = <<LabelPredicate?><PropertyPredicates?>>
   LabelPredicate = ConjunctLabels
+  ConjunctLabels.ConjunctLabels = DisjunctLabels+
+  DisjunctLabels.DisjunctLabels = <:<{Label "|"}+>>
 
   PropertyPredicates.Props = < <CURLY-OPEN><{PropertyPredicate ", "}*><CURLY-CLOSE>>
-  PropertyPredicate.Prop = <<Prop> = <Literal>>
+  PropertyPredicate.Prop = <<Prop>:<Exp>>
+
+  CostVariableDef.CostVar = < COST <VarDef>> {case-insensitive}
 
 context-free priorities
   {
@@ -65,5 +69,3 @@ context-free priorities
       RegularPathExpression.Concatenation
       RegularPathExpression.Union
   }
-  
-  

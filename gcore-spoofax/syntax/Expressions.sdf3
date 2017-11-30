@@ -4,7 +4,9 @@ imports
 
   Names
   Literals
+  MatchPattern
   gcore-spoofax
+  Extensions
 
 context-free syntax
 
@@ -13,7 +15,7 @@ context-free syntax
   Exp = <(<Exp>)> {bracket}
   Exp = PropRef
   Exp = VarRef
-  Exp = LabelPredicateExp
+  Exp = BasicMatchPattern
   Exp = Literal
   
   Exp.List = <[<{Exp ", "}*>]>
@@ -27,10 +29,10 @@ context-free syntax
   Exp.Mul = <<Exp> * <Exp>> {left}
   Exp.Div = <<Exp> / <Exp>> {left}
   Exp.Mod = <<Exp> % <Exp>> {left}
-  
+
   Exp.Add = <<Exp> + <Exp>> {left}
   Exp.Sub = <<Exp> - <Exp>> {left}
-  
+
   Exp.Eq   = <<Exp> = <Exp>> {non-assoc}
   Exp.Gt   = [[Exp] > [Exp]] {non-assoc}
   Exp.Lt   = [[Exp] < [Exp]] {non-assoc}
@@ -41,7 +43,7 @@ context-free syntax
   Exp.In   = <<Exp> IN <Exp>> {non-assoc, case-insensitive} 
 
   Exp.Not = <NOT <Exp>> {case-insensitive}
-  
+
   Exp.And = <<Exp> AND <Exp>> {left, case-insensitive}
   Exp.Or  = <<Exp> OR <Exp>> {left, case-insensitive}
 
@@ -52,12 +54,10 @@ context-free syntax
 
   Exp.Cast = <CAST(<Exp> AS <DATA-TYPE>)> {case-insensitive}
 
-  Exp.Exists = <EXISTS ( <Query> )> {case-insensitive}
-  Exp.ScalarSubquery = <( <TabularGraphQuery> )>
+  GraphOrSubQuery          = GraphName
+  GraphOrSubQuery.SubQuery = <( <GraphQuery> )>
 
-  LabelPredicateExp.LabelPredicateExp = <<VarRef><ConjunctLabels>>
-  ConjunctLabels.ConjunctLabels = DisjunctLabels+
-  DisjunctLabels.DisjunctLabels = <:<{Label "|"}+>>
+  Exp.Exists = <EXISTS ( <Query> )> {case-insensitive}
 
 context-free syntax // function calls
 
