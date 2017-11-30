@@ -15,10 +15,11 @@ context-free syntax
   Exp = <(<Exp>)> {bracket}
   Exp = PropRef
   Exp = VarRef
-  Exp = BasicMatchPattern
+  Exp = BasicGraphPattern
   Exp = Literal
   
   Exp.List = <[<{Exp ", "}*>]>
+  Exp.ListAccess = <<Exp>[<Exp>]>
 
   Exp.UMin = <-<Exp>>
   Exp.IsNull    = <<Exp> IS NULL> {case-insensitive}
@@ -82,8 +83,12 @@ context-free priorities
 
   {
       Exp.UMin
+  }
+  >
+  {
       Exp.IsNull
       Exp.IsNotNull
+      Exp.ListAccess
   }
   >
   {

@@ -23,15 +23,15 @@ context-free syntax
 
   HavingClause.HavingClause = <HAVING <{Exp ", "}+>> {case-insensitive}
 
-  OrderByClause.OrderByClause = <order by <{OrderElem ", "}+>> {case-insensitive}
+  OrderByClause.OrderByClause = <ORDER BY <{OrderElem ", "}+>> {case-insensitive}
   OrderElem = <<Exp>>
-  OrderElem.Asc = <<Exp> asc> {case-insensitive}
-  OrderElem.Desc = <<Exp> desc> {case-insensitive}
+  OrderElem.Asc = <<Exp> ASC> {case-insensitive}
+  OrderElem.Desc = <<Exp> DESC> {case-insensitive}
 
   LimitOffsetClauses.LimitOffsetClauses = <<LimitClause> <OffsetClause?>>
   LimitOffsetClauses.OffsetLimitClauses = <<OffsetClause> <LimitClause?>>
-  LimitClause.LimitClause = <limit <IntOrParameter>> {case-insensitive}
-  OffsetClause.OffsetClause = <offset <IntOrParameter>> {case-insensitive}
+  LimitClause.LimitClause = <LIMIT <IntOrParameter>> {case-insensitive}
+  OffsetClause.OffsetClause = <OFFSET <IntOrParameter>> {case-insensitive}
 
   IntOrParameter.Integer = UNSIGNED-INT
   IntOrParameter.Parameter = Parameter

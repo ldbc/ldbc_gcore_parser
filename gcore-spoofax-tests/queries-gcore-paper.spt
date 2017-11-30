@@ -35,7 +35,7 @@ test Query 4 [[
 
   CONSTRUCT (c)<-[:worksAt]-(n)
     MATCH   (c:Company)             ON company_graph, 
-            (n:Person {employer:e}) ON social_graph
+            (n:Person {employer=e}) ON social_graph
       WHERE c.name = e
   UNION social_graph
 
@@ -45,14 +45,14 @@ test Query 5 [[
 
   CONSTRUCT  social_graph, 
       (x GROUP e :Company {name:=e})<-[y:worksAt]-(n)
-    MATCH   (n:Person {employer:e})
+    MATCH   (n:Person {employer=e})
 
 ]]
 
 test Query 6 [[
 
   CONSTRUCT (n)-[y:worksAt]->(x:Company{name:=n.employer})
-    MATCH   (n:Person {employer:e})
+    MATCH   (n:Person {employer=e})
 
 ]]
 
@@ -113,13 +113,13 @@ test Query 11 [[
 test Query 12 [[
 
   GRAPH VIEW social_graph2 AS (
-  PATH wKnows AS (x)-[e:knows]->(y)
+  PATH wKnows = (x)-[e:knows]->(y)
     WHERE NOT 'Google' IN y.employer
     COST 1 / (1 + e.nr_messages)
   CONSTRUCT social_graph1, (n)-/@p:toWagner/->(m)
     MATCH   (n:Person)-/SHORTEST p<~wKnows*>/->(m:Person) 
       ON    social_graph1
-      WHERE (m)-[:hasInterest]->(:tag {name:'Wagner'})
+      WHERE (m)-[:hasInterest]->(:tag {name='Wagner'})
         AND (n)-[:isLocatedIn]->()<-[:isLocatedIn]-(m) 
         AND n.firstName = 'John' AND n.lastName = 'Doe')
 
@@ -132,15 +132,5 @@ test Query 12 [[
     MATCH   (n:Person)-/@p:toWagner/->(), (m:Person)
       ON    social_graph2
       WHERE n = nodes(p)[1]
-
-]]
-
-test Query 13 [[
-
-
-]]
-
-test Query 14 [[
-
 
 ]]

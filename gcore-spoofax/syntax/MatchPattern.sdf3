@@ -8,9 +8,9 @@ imports
 
 context-free syntax
 
-  FullMatchPattern.FullMatchPattern = <<{BasicMatchPattern ","}+>>
+  FullGraphPattern.FullGraphPattern = <<{BasicGraphPattern ","}+>>
 
-  BasicMatchPattern.BasicMatchPattern = <<VertexMatchPattern><EdgeVertexMatchPattern*>>
+  BasicGraphPattern.BasicGraphPattern = <<VertexMatchPattern><EdgeVertexMatchPattern*>>
   VertexMatchPattern.Vertex = <(<VarDef?><ObjectMatchPattern>)>
 
   EdgeVertexMatchPattern.EdgeVertexMatchPattern = <<ConnectionMatchPattern><VertexMatchPattern>>
@@ -54,7 +54,7 @@ context-free syntax
   DisjunctLabels.DisjunctLabels = <:<{Label "|"}+>>
 
   PropertyPredicates.Props = < <CURLY-OPEN><{PropertyPredicate ", "}*><CURLY-CLOSE>>
-  PropertyPredicate.Prop = <<Prop>:<Exp>>
+  PropertyPredicate.Prop = <<Prop>=<Exp>>
 
   CostVariableDef.CostVar = < COST <VarDef>> {case-insensitive}
 

@@ -43,18 +43,17 @@ context-free syntax
   PathClause.Path = <<{PathMacroDeclaration "\n"}+>>
   MatchClause.Match = <
     MATCH <{BasicGraphPatternLocation ",\n"}+>
-    <WhereClause?>
-    <OptionalClause?>
+      <WhereClause?>
+      <{OptionalClause "\n"}*>
   > {case-insensitive}
 
-  OptionalClause.Optional = <<{OptionalMatch "\n"}+>>
-  OptionalMatch.OptionalMatch = <
-    OPTIONAL <BasicGraphPatternLocation>
-    <WhereClause?>  
+  OptionalClause.Optional = <
+    OPTIONAL <{BasicGraphPatternLocation ",\n"}+>
+      <WhereClause?>  
   > {case-insensitive}
 
   BasicGraphPatternLocation.BasicGraphPatternLocation = <
-    <FullMatchPattern>
+    <BasicGraphPattern>
     <Location?>
   >
 

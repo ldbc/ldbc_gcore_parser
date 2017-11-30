@@ -8,15 +8,13 @@ imports
 	MatchPattern
   
 context-free syntax
-	PathMacroDeclaration.PathMacroDeclaration = <PATH <MarcoNameDef> AS <BasicMatchPattern> 
+	PathMacroDeclaration.PathMacroDeclaration = <PATH <MarcoNameDef> = <BasicGraphPattern> 
 	  <BranchPatterns?>
 	  <PathWhereClause?>
 	  <PathCostClause?>> {case-insensitive}
 	  
-	BranchPatterns.BranchPatterns = <BRANCH <{BasicMatchPattern ", "}+>> {case-insensitive}
+	BranchPatterns.BranchPatterns = <BRANCH <{BasicGraphPattern ", "}+>> {case-insensitive}
 	  
 	PathWhereClause.PathWhereClause = <WHERE <Exp>> {case-insensitive}
 	
 	PathCostClause.PathCostClause = <COST <Exp>> {case-insensitive}
-	
-// TODO extend
